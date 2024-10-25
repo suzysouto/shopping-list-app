@@ -1,24 +1,37 @@
 import { ShoppingListTypes } from './types'
-import { Container, Form } from './styles'
+import { Container, Form, ItemContainer, ItemList, PriceInput, QuantityInput } from './styles'
 import { useState } from 'react';
 
 export const ShoppingList = () => {
-  const [items, setItems] = useState<ShoppingListTypes[]>([]);
-  const [name, setName] = useState("");
-  const [price, setPrice] = useState("");
+  const [items, setItems] = useState<ShoppingListTypes[]>([])
+  const [name, setName] = useState("")
 
-  // Função para adicionar item
+  // Função para adicionar item apenas com o nome
   const addItem = () => {
-    if (name && price) {
-      const newItem = { name, price: parseFloat(price) };
-      setItems([...items, newItem]);
-      setName("");
-      setPrice("");
+    if (name.trim()) {
+      setItems([...items, { name, price: 0, quantity: 1 }]) // Adiciona item com preço inicial de 0
+      setName("")
     }
-  };
+  }
+
+  // Função para atualizar o preço de um item específico
+  const updatePrice = (index: number, price: number) => {
+    const updatedItems = items.map((item, i) =>
+      i === index ? { ...item, price } : item
+    );
+    setItems(updatedItems);
+  }
+
+  // Função para atualizar a quantidade de um item específico
+  const updateQuantity = (index: number, quantity: number) => {
+    const updatedItems = items.map((item, i) =>
+      i === index ? { ...item, quantity } : item
+    );
+    setItems(updatedItems)
+  }
 
   // Calcular o total
-  const total = items.reduce((acc, item) => acc + item.price, 0)
+  const total = items.reduce((acc, item) => acc + item.price * item.quantity, 0)
 
   return (
     <Container>
@@ -30,24 +43,30 @@ export const ShoppingList = () => {
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
-        <input
-          type="number"
-          placeholder="Preço do produto"
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-        />
         <button type="button" onClick={addItem}>
           Adicionar
         </button>
       </Form>
 
-      <ul>
+      <ItemList>
         {items.map((item, index) => (
-          <li key={index}>
-            {item.name} - R$ {item.price.toFixed(2)}
-          </li>
+          <ItemContainer key={index}>
+            <span>{item.name}</span>
+            <QuantityInput
+              type="number"
+              placeholder="Qtd"
+              value={item.quantity > 0 ? item.quantity : ""}
+              onChange={(e) => updateQuantity(index, parseInt(e.target.value) || 1)}
+            />
+            <PriceInput
+              type="number"
+              placeholder="Preço"
+              value={item.price > 0 ? item.price : ""}
+              onChange={(e) => updatePrice(index, parseFloat(e.target.value) || 0)}
+            />
+          </ItemContainer>
         ))}
-      </ul>
+      </ItemList>
 
       <h2>Total: R$ {total.toFixed(2)}</h2>
     </Container>

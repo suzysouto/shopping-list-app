@@ -29,3 +29,30 @@ export const Form = styled.div`
     }
   }
 `
+
+export const ItemList = styled.ul`
+  list-style-type: none;
+  padding: 0;
+`
+
+export const ItemContainer = styled.li`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #ccc;
+`
+
+export const PriceInput = styled.input`
+  width: 100px;
+  padding: 4px;
+  font-size: 1rem;
+  text-align: right;
+`
+
+export const QuantityInput = styled.input`
+  width: 60px;
+  padding: 4px;
+  font-size: 1rem;
+  text-align: center;
+`
