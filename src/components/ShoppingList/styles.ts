@@ -56,3 +56,15 @@ export const QuantityInput = styled.input`
   font-size: 1rem;
   text-align: center;
 `
+
+export const DeleteButton = styled.button`
+  padding: 0.25rem 0.5rem;
+  background-color: #E63946;
+  color: #FFF;
+  border: none;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #D62828;
+  }
+`

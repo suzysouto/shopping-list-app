@@ -1,5 +1,5 @@
 import { ShoppingListTypes } from './types'
-import { Container, Form, ItemContainer, ItemList, PriceInput, QuantityInput } from './styles'
+import { Container, DeleteButton, Form, ItemContainer, ItemList, PriceInput, QuantityInput } from './styles'
 import { useState } from 'react';
 
 export const ShoppingList = () => {
@@ -25,9 +25,20 @@ export const ShoppingList = () => {
   // Função para atualizar a quantidade de um item específico
   const updateQuantity = (index: number, quantity: number) => {
     const updatedItems = items.map((item, i) =>
-      i === index ? { ...item, quantity } : item
-    );
+      i === index ? { ...item, quantity: quantity > 0 ? quantity : 1 } : item
+    )
     setItems(updatedItems)
+  }
+
+  // Função para remover um item da lista
+  const removeItem = (index: number) => {
+    const updatedItems = items.filter((_, i) => i !== index)
+    setItems(updatedItems)
+  }
+
+  //Função que captura se a tecla Enter foi pressionada e adiciona o item
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    e.key === "Enter" ? addItem() : null
   }
 
   // Calcular o total
@@ -42,6 +53,7 @@ export const ShoppingList = () => {
           placeholder="Nome do produto"
           value={name}
           onChange={(e) => setName(e.target.value)}
+          onKeyDown={handleKeyDown}
         />
         <button type="button" onClick={addItem}>
           Adicionar
@@ -64,6 +76,7 @@ export const ShoppingList = () => {
               value={item.price > 0 ? item.price : ""}
               onChange={(e) => updatePrice(index, parseFloat(e.target.value) || 0)}
             />
+            <DeleteButton onClick={() => removeItem(index)}>Excluir</DeleteButton>
           </ItemContainer>
         ))}
       </ItemList>
