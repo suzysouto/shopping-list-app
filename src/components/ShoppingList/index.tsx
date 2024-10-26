@@ -38,7 +38,8 @@ export const ShoppingList = () => {
 
   //Função que captura se a tecla Enter foi pressionada e adiciona o item
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    e.key === "Enter" ? addItem() : null
+    if (e.key === "Enter")
+      addItem()
   }
 
   // Calcular o total
