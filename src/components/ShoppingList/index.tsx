@@ -92,6 +92,12 @@ export const ShoppingList = () => {
     }
   }
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      addItem();
+    }
+  }
+
   const total = items.reduce((acc, item) => acc + item.price * item.quantity, 0)
 
   return (
@@ -111,6 +117,7 @@ export const ShoppingList = () => {
               placeholder="Nome do produto"
               value={newItemName}
               onChange={(e) => setNewItemName(e.target.value)}
+              onKeyDown={handleKeyDown}
             />
             <button type="button" onClick={addItem}>Adicionar</button>
             <button type="button" onClick={handleSaveList}>Salvar Lista</button>
