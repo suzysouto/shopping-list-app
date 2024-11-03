@@ -204,3 +204,32 @@ export const Title = styled.h1`
     font-size: 1.4rem;
   }
 `
+
+export const SearchContainer = styled.div`
+  display: flex;
+  gap: 0.625rem;
+  margin-bottom: 1.25rem;
+
+  input {
+    flex: 1; /* Para ocupar o espaço disponível */
+    padding: 0.5rem;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 0.25rem;
+  }
+
+  button {
+    padding: 0.5rem 1rem;
+    background-color: #0070f3;
+    color: white;
+    border: none;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+
+    &:hover {
+      background-color: #005bb5;
+    }
+  }
+`
