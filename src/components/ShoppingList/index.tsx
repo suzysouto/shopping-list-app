@@ -1,6 +1,26 @@
 import { useEffect, useState } from 'react'
 import { ShoppingListTypes } from './types'
-import { Container, Form, ItemContainer, ItemList, PriceInput, QuantityInput, DeleteButton, TotalPrice, CheckboxContainer, Checkbox, DoneItem, PendingItem, SpecItemsWrapper, ExitButton, Header, Title } from './styles'
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import {
+  Container,
+  Form,
+  ItemContainer,
+  ItemList,
+  PriceInput,
+  QuantityInput,
+  DeleteButton,
+  TotalPrice,
+  CheckboxContainer,
+  Checkbox,
+  DoneItem,
+  PendingItem,
+  SpecItemsWrapper,
+  ExitButton,
+  Header,
+  Title,
+  SearchContainer,
+} from './styles'
 import { auth } from '../../firebaseConfig'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 import { saveList, getList } from '@/services/ListService'
@@ -12,6 +32,7 @@ export const ShoppingList = () => {
   const [newItemQuantity, setNewItemQuantity] = useState<number>(0)
   const [newItemPrice, setNewItemPrice] = useState<number>(0)
   const [userId, setUserId] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState("") // Estado para o termo de busca
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -75,9 +96,10 @@ export const ShoppingList = () => {
     if (userId) {
       try {
         await saveList(userId, items)
-        console.log("Lista salva com sucesso!")
+        toast.success("Lista salva com sucesso!") // Exibe a notificação de sucesso
       } catch (error) {
         console.error("Erro ao salvar a lista: ", error)
+        toast.error("Erro ao salvar a lista.") // Exibe a notificação de erro
       }
     }
   }
@@ -98,7 +120,11 @@ export const ShoppingList = () => {
     }
   }
 
-  const total = items.reduce((acc, item) => acc + item.price * item.quantity, 0)
+  const filteredItems = items.filter(item =>
+    item.name.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const total = filteredItems.reduce((acc, item) => acc + item.price * item.quantity, 0)
 
   return (
     <Container>
@@ -122,11 +148,21 @@ export const ShoppingList = () => {
             <button type="button" onClick={addItem}>Adicionar</button>
             <button type="button" onClick={handleSaveList}>Salvar Lista</button>
           </Form>
+
+          <SearchContainer>
+            <input
+              type="text"
+              placeholder="Buscar produto"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <button>Buscar</button>
+          </SearchContainer>
         </>
       )}
 
       <ItemList>
-        {items.map((item, index) => (
+        {filteredItems.map((item, index) => (
           <ItemContainer key={index}>
             <CheckboxContainer>
               <Checkbox
@@ -160,6 +196,7 @@ export const ShoppingList = () => {
       </ItemList>
 
       {userId && <TotalPrice>Total: R$ {total.toFixed(2)}</TotalPrice>}
+      <ToastContainer />
     </Container>
   )
 }
