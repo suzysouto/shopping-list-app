@@ -233,3 +233,36 @@ export const SearchContainer = styled.div`
     }
   }
 `
+
+export const SupermarketField = styled.div`
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1.25rem;
+`
+
+export const SupermarketLabel = styled.label`
+  font-size: 1rem;
+  color: #FFF;
+  margin-bottom: 0.5rem;
+`
+
+export const SupermarketInput = styled.input`
+  padding: 0.5rem;
+  font-size: 1rem;
+  width: 100%;
+  border: 1px solid #ccc;
+  border-radius: 0.25rem;
+`
+
+export const RadioButtonContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  width: 8rem;
+  padding: 1rem 0;
+`
+
+export const RadioButtonLabel = styled.div`
+  input {
+    margin-right: 0.5rem;
+  }
+`
