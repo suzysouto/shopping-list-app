@@ -20,6 +20,11 @@ import {
   Header,
   Title,
   SearchContainer,
+  SupermarketField,
+  SupermarketLabel,
+  SupermarketInput,
+  RadioButtonContainer,
+  RadioButtonLabel,
 } from './styles'
 import { auth } from '../../firebaseConfig'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
@@ -31,8 +36,10 @@ export const ShoppingList = () => {
   const [newItemName, setNewItemName] = useState("")
   const [newItemQuantity, setNewItemQuantity] = useState<number>(0)
   const [newItemPrice, setNewItemPrice] = useState<number>(0)
+  const [supermarketName, setSupermarketName] = useState<string>("")
   const [userId, setUserId] = useState<string | null>(null)
-  const [searchTerm, setSearchTerm] = useState("") // Estado para o termo de busca
+  const [searchTerm, setSearchTerm] = useState("")
+  const [isSupermarketOptional, setIsSupermarketOptional] = useState<boolean>(false)
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -42,14 +49,18 @@ export const ShoppingList = () => {
       } else {
         setUserId(null)
         setItems([])
+        setSupermarketName('')
       }
     })
     return unsubscribe;
   }, [])
 
   const loadUserList = async (uid: string) => {
-    const userItems = await getList(uid)
-    setItems(userItems)
+    const userList = await getList(uid)
+    if (userList) {
+      setItems(userList.items || [])
+      setSupermarketName(userList.supermarket || '')
+    }
   }
 
   const addItem = () => {
@@ -95,11 +106,11 @@ export const ShoppingList = () => {
   const handleSaveList = async () => {
     if (userId) {
       try {
-        await saveList(userId, items)
-        toast.success("Lista salva com sucesso!") // Exibe a notificação de sucesso
+        await saveList(userId, items, supermarketName)
+        toast.success("Lista salva com sucesso!")
       } catch (error) {
         console.error("Erro ao salvar a lista: ", error)
-        toast.error("Erro ao salvar a lista.") // Exibe a notificação de erro
+        toast.error("Erro ao salvar a lista.")
       }
     }
   }
@@ -109,6 +120,7 @@ export const ShoppingList = () => {
       await signOut(auth)
       setUserId(null)
       setItems([])
+      setSupermarketName('')
     } catch (error) {
       console.error("Erro ao fazer logout: ", error)
     }
@@ -137,6 +149,42 @@ export const ShoppingList = () => {
         <LoginRegister setUserId={setUserId} />
       ) : (
         <>
+          Deseja informar o supermercado?
+          <RadioButtonContainer>
+            <RadioButtonLabel>
+              <input 
+                type='radio'
+                name='supermarketOption'
+                value='yes'
+                checked={isSupermarketOptional === true}
+                onChange={() => setIsSupermarketOptional(true)}
+              />
+              Sim
+            </RadioButtonLabel>
+            <RadioButtonLabel>
+              <input 
+                type='radio'
+                name='supermarketOption'
+                value='no'
+                checked={isSupermarketOptional === false}
+                onChange={() => setIsSupermarketOptional(false)}
+              />
+              Não
+            </RadioButtonLabel>
+          </RadioButtonContainer>
+          {isSupermarketOptional && (
+            <SupermarketField>
+              <SupermarketLabel>
+                Nome do supermercado
+              </SupermarketLabel>
+              <SupermarketInput
+                type='text'
+                placeholder='Informe o nome do supermercado'
+                value={supermarketName}
+                onChange={(e) => setSupermarketName(e.target.value)}
+              />
+            </SupermarketField>
+          )}
           <Form>
             <input
               type="text"
