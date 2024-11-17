@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import Modal from 'react-modal'
 import { ShoppingListTypes } from './types'
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -25,11 +26,15 @@ import {
   SupermarketInput,
   RadioButtonContainer,
   RadioButtonLabel,
+  ItemWrapper,
+  HistoryButton,
 } from './styles'
 import { auth } from '../../firebaseConfig'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 import { saveList, getList } from '@/services/ListService'
 import { LoginRegister } from '../LoginRegister'
+
+Modal.setAppElement('body')
 
 export const ShoppingList = () => {
   const [items, setItems] = useState<ShoppingListTypes[]>([])
@@ -40,6 +45,8 @@ export const ShoppingList = () => {
   const [userId, setUserId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [isSupermarketOptional, setIsSupermarketOptional] = useState<boolean>(false)
+  const [currentHistory, setCurrentHistory] = useState<number[]>([])
+  const [modalIsOpen, setModalIsOpen] = useState(false)
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -70,12 +77,27 @@ export const ShoppingList = () => {
         quantity: newItemQuantity,
         price: newItemPrice,
         done: false,
+        priceHistory: [], 
       }
       setItems((prevItems) => [...prevItems, newItem])
       setNewItemName("")
       setNewItemQuantity(0)
       setNewItemPrice(0)
     }
+  }
+
+  const handleShowHistory = (index: number) => {
+    const item = items[index];
+  
+    if (item && item.priceHistory) {
+      setCurrentHistory(item.priceHistory);
+      setModalIsOpen(true);
+    }
+  }  
+
+  const handleCloseModal = () => {
+    setModalIsOpen(false)
+    setCurrentHistory([])
   }
 
   const toggleDone = (index: number) => {
@@ -85,13 +107,30 @@ export const ShoppingList = () => {
     setItems(updatedItems)
   }
 
-  const updatePrice = (index: number, price: number) => {
-    const updatedItems = items.map((item, i) =>
-      i === index ? { ...item, price } : item
-    )
-    setItems(updatedItems)
-  }
-
+  const updatePrice = (index: number, newPrice: number) => {
+    setItems((prevItems) => {
+      const updatedItems = prevItems.map((item, i) => {
+        if (i === index) {
+          const previousPrice = item.price
+  
+          // Verifique se o histórico de preços existe e é um array
+          const updatedPriceHistory = Array.isArray(item.priceHistory) 
+            ? [...item.priceHistory, previousPrice]  
+            : [previousPrice]
+  
+          return {
+            ...item,
+            price: newPrice,
+            priceHistory: updatedPriceHistory.slice(-5), 
+          }
+        }
+        return item
+      })
+  
+      return updatedItems
+    })
+  }  
+     
   const updateQuantity = (index: number, quantity: number) => {
     const updatedItems = items.map((item, i) =>
       i === index ? { ...item, quantity } : item
@@ -149,6 +188,22 @@ export const ShoppingList = () => {
         <LoginRegister setUserId={setUserId} />
       ) : (
         <>
+          <Modal
+            isOpen={modalIsOpen}
+            onRequestClose={handleCloseModal}
+            contentLabel='Histórico de Preços'
+            overlayClassName="ModalOverlay"
+            className="ModalContent"
+          >
+            <h2>Histórico de Preços</h2>
+            <ul>
+              {currentHistory.map((price, idx) => (
+                <li key={idx}>R$ {price.toFixed(2)}</li>
+              ))}
+            </ul>
+            <button onClick={handleCloseModal}>Fechar</button>
+          </Modal>
+
           Deseja informar o supermercado?
           <RadioButtonContainer>
             <RadioButtonLabel>
@@ -212,37 +267,50 @@ export const ShoppingList = () => {
       <ItemList>
         {filteredItems.map((item, index) => (
           <ItemContainer key={index}>
-            <CheckboxContainer>
-              <Checkbox
-                type="checkbox"
-                checked={item.done}
-                onChange={() => toggleDone(index)}
-              />
-              {item.done ? (
-                <DoneItem>{item.name}</DoneItem>
-              ) : (
-                <PendingItem>{item.name}</PendingItem>
-              )}
-            </CheckboxContainer>
-            <SpecItemsWrapper>
-              <QuantityInput
-                type="number"
-                placeholder="Qtd"
-                value={item.quantity > 0 ? item.quantity : ""}
-                onChange={(e) => updateQuantity(index, parseInt(e.target.value) || 0)}
-              />
-              <PriceInput
-                type="number"
-                placeholder="Preço"
-                value={item.price > 0 ? item.price : ""}
-                onChange={(e) => updatePrice(index, parseFloat(e.target.value) || 0)}
-              />
-              <DeleteButton onClick={() => removeItem(index)}>Excluir</DeleteButton>
-            </SpecItemsWrapper>
+            <ItemWrapper>
+              <CheckboxContainer>
+                <Checkbox
+                  type="checkbox"
+                  checked={item.done}
+                  onChange={() => toggleDone(index)}
+                />
+                {item.done ? (
+                  <DoneItem>{item.name}</DoneItem>
+                ) : (
+                  <PendingItem>{item.name}</PendingItem>
+                )}
+              </CheckboxContainer>
+              <SpecItemsWrapper>
+                <QuantityInput
+                  type="number"
+                  placeholder="Qtd"
+                  value={item.quantity > 0 ? item.quantity : ""}
+                  onChange={(e) => updateQuantity(index, parseInt(e.target.value) || 0)}
+                />
+                <PriceInput
+                  type="number"
+                  placeholder="Preço"
+                  step="0.01"
+                  value={item.price > 0 ? item.price : ""}
+                  onChange={(e) => {
+                    const inputValue = e.target.valueAsNumber || 0
+                    setItems(prevItems =>
+                      prevItems.map((item, i) =>
+                        i === index ? { ...item, price: inputValue } : item
+                      )
+                    );
+                  }}
+                  onBlur={() => updatePrice(index, item.price)}  // Atualiza quando o campo perde foco
+                />
+                <DeleteButton onClick={() => removeItem(index)}>Excluir</DeleteButton>
+              </SpecItemsWrapper> 
+            </ItemWrapper>           
+            <HistoryButton>
+              <button onClick={() => handleShowHistory(index)}>+ Histórico</button>
+            </HistoryButton>
           </ItemContainer>
         ))}
       </ItemList>
-
       {userId && <TotalPrice>Total: R$ {total.toFixed(2)}</TotalPrice>}
       <ToastContainer />
     </Container>

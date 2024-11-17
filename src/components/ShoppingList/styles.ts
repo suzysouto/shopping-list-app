@@ -1,3 +1,4 @@
+import { css } from "@emotion/react"
 import styled from "@emotion/styled"
 
 export const Container = styled.div`
@@ -64,6 +65,7 @@ export const ItemList = styled.ul`
 
 export const ItemContainer = styled.li`
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem;
@@ -77,6 +79,13 @@ export const ItemContainer = styled.li`
     flex-direction: column;
     align-items: flex-start;
   }
+`
+
+export const ItemWrapper = styled.div`
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 1rem;
 `
 
 export const PriceInput = styled.input`
@@ -157,10 +166,11 @@ export const PendingItem = styled.span`
 `
 
 export const SpecItemsWrapper = styled.div`
-  width: 55%;
+  width: 60%;
   display: flex;
   flex-direction: row;
   justify-content: space-between;
+  gap: 2rem;
 
   @media (max-width: 600px) {
     flex-direction: column;
@@ -265,4 +275,52 @@ export const RadioButtonLabel = styled.div`
   input {
     margin-right: 0.5rem;
   }
+`
+
+export const ModalOverlay = styled.div`
+  background-color: rgba(0, 0, 0, 0.5);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+`
+
+export const ModalContent = styled.div`
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  width: 400px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+`
+
+export const GlobalStyles = css`
+  .ModalOverlay {
+    background-color: rgba(0, 0, 0, 0.5);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .ModalContent {
+    background: white;
+    color: #000;
+    padding: 20px;
+    border-radius: 10px;
+    width: 400px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+`
+
+export const HistoryButton = styled.div`
+  width: 100%;
+  padding: 0 1rem;
 `
