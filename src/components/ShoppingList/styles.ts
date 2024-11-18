@@ -86,6 +86,11 @@ export const ItemWrapper = styled.div`
   display: flex;
   justify-content: space-between;
   padding: 0 1rem;
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+    gap: 1rem;
+  }
 `
 
 export const PriceInput = styled.input`
