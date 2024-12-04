@@ -33,6 +33,8 @@ import { auth } from '../../firebaseConfig'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 import { saveList, getList } from '@/services/ListService'
 import { LoginRegister } from '../LoginRegister'
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 Modal.setAppElement('body')
 
@@ -45,7 +47,7 @@ export const ShoppingList = () => {
   const [userId, setUserId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [isSupermarketOptional, setIsSupermarketOptional] = useState<boolean>(false)
-  const [currentHistory, setCurrentHistory] = useState<number[]>([])
+  const [currentHistory, setCurrentHistory] = useState<{ price: number; date: string }[]>([])
   const [modalIsOpen, setModalIsOpen] = useState(false)
 
   useEffect(() => {
@@ -87,11 +89,11 @@ export const ShoppingList = () => {
   }
 
   const handleShowHistory = (index: number) => {
-    const item = items[index];
+    const item = items[index]
   
     if (item && item.priceHistory) {
-      setCurrentHistory(item.priceHistory);
-      setModalIsOpen(true);
+      setCurrentHistory(item.priceHistory)
+      setModalIsOpen(true)
     }
   }  
 
@@ -112,24 +114,31 @@ export const ShoppingList = () => {
       const updatedItems = prevItems.map((item, i) => {
         if (i === index) {
           const previousPrice = item.price
-  
-          // Verifique se o histórico de preços existe e é um array
-          const updatedPriceHistory = Array.isArray(item.priceHistory) 
-            ? [...item.priceHistory, previousPrice]  
-            : [previousPrice]
+          const currentDate = new Date().toLocaleDateString('pt-BR') // Obtém a data atual formatada
+
+          // Certifica-se de que priceHistory é uma array válida
+          const priceHistory = item.priceHistory || []
+          
+          // Verifica se já existe um registro no histórico com a data de hoje
+          const lastEntry = item.priceHistory?.[item.priceHistory.length - 1]
+          const isSameDay = lastEntry && lastEntry.date === currentDate
+
+          const updatedPriceHistory = isSameDay
+            ? [...priceHistory] // Se for o mesmo dia, o histórico é mantido sem adição
+            : [...priceHistory, { price: previousPrice, date: currentDate }] //Adciona o novo registro
   
           return {
             ...item,
             price: newPrice,
-            priceHistory: updatedPriceHistory.slice(-5), 
+            priceHistory: updatedPriceHistory.slice(-5), // Mantém apenas os últimos 5 registros
           }
         }
-        return item
+        return item;
       })
   
       return updatedItems
     })
-  }  
+  }   
      
   const updateQuantity = (index: number, quantity: number) => {
     const updatedItems = items.map((item, i) =>
@@ -177,6 +186,52 @@ export const ShoppingList = () => {
 
   const total = filteredItems.reduce((acc, item) => acc + item.price * item.quantity, 0)
 
+  const handleDownloadPDF = () => {
+    const doc = new jsPDF()
+    doc.setFont("helvetica", "bold")
+
+    // Título do relatório
+    doc.text("Relatório de Compras", 10, 10)
+
+    if (supermarketName) {
+        doc.setFontSize(12)
+        doc.text(`Supermercado: ${supermarketName}`, 10, 20)
+    }
+
+    const tableData = filteredItems.map((item) => [
+      item.name || "-",
+      item.quantity || 0,
+      `R$ ${(item.price ?? 0).toFixed(2)}`,
+      item.priceHistory
+        ?.map((entry) =>
+          entry.price !== undefined
+            ? `R$ ${entry.price.toFixed(2)} (${entry.date})`
+            : `- (${entry.date || "Data indisponível"})`
+        )
+        .join("\n") || "-", // Quebra de linha no histórico de preços
+    ])
+
+    let finalY = 30
+
+    autoTable(doc, {
+        head: [["Produto", "Quantidade", "Preço", "Histórico de Preços"]],
+        body: tableData,
+        startY: supermarketName ? 30 : 20,
+        styles: { halign: "center", valign: "middle" },
+        didDrawCell: (data) => {
+            finalY = data.table.finalY ?? finalY
+        },
+    });
+
+    // Adiciona o total abaixo da tabela com uma distância ajustada
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(14)
+    const totalY = finalY + 250;  // Distância entre a tabela e o total
+    doc.text(`Total Geral: R$ ${total.toFixed(2)}`, 10, totalY)
+
+    doc.save("relatorio_compras.pdf")
+  }  
+
   return (
     <Container>
       <Header>
@@ -188,6 +243,7 @@ export const ShoppingList = () => {
         <LoginRegister setUserId={setUserId} />
       ) : (
         <>
+          <button onClick={handleDownloadPDF}>Baixar Relatório em PDF</button>
           <Modal
             isOpen={modalIsOpen}
             onRequestClose={handleCloseModal}
@@ -197,8 +253,16 @@ export const ShoppingList = () => {
           >
             <h2>Histórico de Preços</h2>
             <ul>
-              {currentHistory.map((price, idx) => (
-                <li key={idx}>R$ {price.toFixed(2)}</li>
+              {currentHistory.map((entry, idx) => (
+                <li key={idx}>
+                  {entry.price !== undefined ? (
+                    <>
+                      Preço: R$ {entry.price.toFixed(2)} - Data: {entry.date}
+                    </>
+                  ) : (
+                    "Preço indisponível"
+                  )}
+                </li>
               ))}
             </ul>
             <button onClick={handleCloseModal}>Fechar</button>
