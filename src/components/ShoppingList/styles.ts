@@ -5,8 +5,9 @@ export const Container = styled.div`
   max-width: 37.5rem; /* 600px */
   margin: 1.5rem auto;
   padding: 1.5rem;
-  background-color: #1c1c1c;
-  color: #ffffff;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  border: 1px solid var(--text-color);
   border-radius: 0.5rem;
   box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.2);
 `
@@ -328,4 +329,22 @@ export const GlobalStyles = css`
 export const HistoryButton = styled.div`
   width: 100%;
   padding: 0 1rem;
+`
+
+export const InnerHeader = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  margin: -4.5rem 0 2rem;
+`
+
+export const PaginationWrapper = styled.div`
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+`
+
+export const ButtonNumbers = styled.button`
+  margin: 0 5px;
+  color: var(--text-color);
+  border: none;
 `

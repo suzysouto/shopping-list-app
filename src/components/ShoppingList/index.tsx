@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
 import Modal from 'react-modal'
 import { ShoppingListTypes } from './types'
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer, toast } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
+import { ThemeProvider } from '@/contexts/ThemeContext'
+import { ThemeSwitcher } from '../ThemeSwitcher'
+import { Global, css } from '@emotion/react'
 import {
   Container,
   Form,
@@ -28,6 +31,9 @@ import {
   RadioButtonLabel,
   ItemWrapper,
   HistoryButton,
+  InnerHeader,
+  PaginationWrapper,
+  ButtonNumbers,
 } from './styles'
 import { auth } from '../../firebaseConfig'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
@@ -49,6 +55,8 @@ export const ShoppingList = () => {
   const [isSupermarketOptional, setIsSupermarketOptional] = useState<boolean>(false)
   const [currentHistory, setCurrentHistory] = useState<{ price: number; date: string }[]>([])
   const [modalIsOpen, setModalIsOpen] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage] = useState(5)
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -230,153 +238,197 @@ export const ShoppingList = () => {
     doc.text(`Total Geral: R$ ${total.toFixed(2)}`, 10, totalY)
 
     doc.save("relatorio_compras.pdf")
-  }  
+  } 
+  
+  // Paginação: calcula os itens visíveis
+  const indexOfLastItem = currentPage * itemsPerPage
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage
+  const currentItems = filteredItems.slice(indexOfFirstItem, indexOfLastItem)
+
+  // Funções de navegação
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber)
+  const nextPage = () => setCurrentPage((prev) => Math.min(prev + 1, Math.ceil(filteredItems.length / itemsPerPage)))
+  const prevPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1))
 
   return (
-    <Container>
-      <Header>
-        <Title>Lista de Compras</Title>
-        <ExitButton onClick={handleLogout}>Sair</ExitButton>
-      </Header>
+    <ThemeProvider>
+      <Global
+        styles={css`
+          body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+          }
+        `}
+      />
+        <Container>
+        <Header>
+          <Title>Lista de Compras</Title>
+          <ThemeSwitcher />        
+        </Header>
 
-      {!userId ? (
-        <LoginRegister setUserId={setUserId} />
-      ) : (
-        <>
-          <button onClick={handleDownloadPDF}>Baixar Relatório em PDF</button>
-          <Modal
-            isOpen={modalIsOpen}
-            onRequestClose={handleCloseModal}
-            contentLabel='Histórico de Preços'
-            overlayClassName="ModalOverlay"
-            className="ModalContent"
-          >
-            <h2>Histórico de Preços</h2>
-            <ul>
-              {currentHistory.map((entry, idx) => (
-                <li key={idx}>
-                  {entry.price !== undefined ? (
-                    <>
-                      Preço: R$ {entry.price.toFixed(2)} - Data: {entry.date}
-                    </>
+        {!userId ? (
+          <LoginRegister setUserId={setUserId} />
+        ) : (
+          <>
+            <InnerHeader>
+              <ExitButton onClick={handleLogout}>Sair</ExitButton>
+            </InnerHeader>
+            <button onClick={handleDownloadPDF}>Baixar Relatório em PDF</button>
+            <Modal
+              isOpen={modalIsOpen}
+              onRequestClose={handleCloseModal}
+              contentLabel='Histórico de Preços'
+              overlayClassName="ModalOverlay"
+              className="ModalContent"
+            >
+              <h2>Histórico de Preços</h2>
+              <ul>
+                {currentHistory.map((entry, idx) => (
+                  <li key={idx}>
+                    {entry.price !== undefined ? (
+                      <>
+                        Preço: R$ {entry.price.toFixed(2)} - Data: {entry.date}
+                      </>
+                    ) : (
+                      "Preço indisponível"
+                    )}
+                  </li>
+                ))}
+              </ul>
+              <button onClick={handleCloseModal}>Fechar</button>
+            </Modal>
+
+            Deseja informar o supermercado?
+            <RadioButtonContainer>
+              <RadioButtonLabel>
+                <input 
+                  type='radio'
+                  name='supermarketOption'
+                  value='yes'
+                  checked={isSupermarketOptional === true}
+                  onChange={() => setIsSupermarketOptional(true)}
+                />
+                Sim
+              </RadioButtonLabel>
+              <RadioButtonLabel>
+                <input 
+                  type='radio'
+                  name='supermarketOption'
+                  value='no'
+                  checked={isSupermarketOptional === false}
+                  onChange={() => setIsSupermarketOptional(false)}
+                />
+                Não
+              </RadioButtonLabel>
+            </RadioButtonContainer>
+            {isSupermarketOptional && (
+              <SupermarketField>
+                <SupermarketLabel>
+                  Nome do supermercado
+                </SupermarketLabel>
+                <SupermarketInput
+                  type='text'
+                  placeholder='Informe o nome do supermercado'
+                  value={supermarketName}
+                  onChange={(e) => setSupermarketName(e.target.value)}
+                />
+              </SupermarketField>
+            )}
+            <Form>
+              <input
+                type="text"
+                placeholder="Nome do produto"
+                value={newItemName}
+                onChange={(e) => setNewItemName(e.target.value)}
+                onKeyDown={handleKeyDown}
+              />
+              <button type="button" onClick={addItem}>Adicionar</button>
+              <button type="button" onClick={handleSaveList}>Salvar Lista</button>
+            </Form>
+
+            <SearchContainer>
+              <input
+                type="text"
+                placeholder="Buscar produto"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <button>Buscar</button>
+            </SearchContainer>
+          </>
+        )}
+
+        <ItemList>
+          {currentItems.map((item, index) => (
+            <ItemContainer key={index}>
+              <ItemWrapper>
+                <CheckboxContainer>
+                  <Checkbox
+                    type="checkbox"
+                    checked={item.done}
+                    onChange={() => toggleDone(index)}
+                  />
+                  {item.done ? (
+                    <DoneItem>{item.name}</DoneItem>
                   ) : (
-                    "Preço indisponível"
+                    <PendingItem>{item.name}</PendingItem>
                   )}
-                </li>
-              ))}
-            </ul>
-            <button onClick={handleCloseModal}>Fechar</button>
-          </Modal>
-
-          Deseja informar o supermercado?
-          <RadioButtonContainer>
-            <RadioButtonLabel>
-              <input 
-                type='radio'
-                name='supermarketOption'
-                value='yes'
-                checked={isSupermarketOptional === true}
-                onChange={() => setIsSupermarketOptional(true)}
-              />
-              Sim
-            </RadioButtonLabel>
-            <RadioButtonLabel>
-              <input 
-                type='radio'
-                name='supermarketOption'
-                value='no'
-                checked={isSupermarketOptional === false}
-                onChange={() => setIsSupermarketOptional(false)}
-              />
-              Não
-            </RadioButtonLabel>
-          </RadioButtonContainer>
-          {isSupermarketOptional && (
-            <SupermarketField>
-              <SupermarketLabel>
-                Nome do supermercado
-              </SupermarketLabel>
-              <SupermarketInput
-                type='text'
-                placeholder='Informe o nome do supermercado'
-                value={supermarketName}
-                onChange={(e) => setSupermarketName(e.target.value)}
-              />
-            </SupermarketField>
-          )}
-          <Form>
-            <input
-              type="text"
-              placeholder="Nome do produto"
-              value={newItemName}
-              onChange={(e) => setNewItemName(e.target.value)}
-              onKeyDown={handleKeyDown}
-            />
-            <button type="button" onClick={addItem}>Adicionar</button>
-            <button type="button" onClick={handleSaveList}>Salvar Lista</button>
-          </Form>
-
-          <SearchContainer>
-            <input
-              type="text"
-              placeholder="Buscar produto"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <button>Buscar</button>
-          </SearchContainer>
-        </>
-      )}
-
-      <ItemList>
-        {filteredItems.map((item, index) => (
-          <ItemContainer key={index}>
-            <ItemWrapper>
-              <CheckboxContainer>
-                <Checkbox
-                  type="checkbox"
-                  checked={item.done}
-                  onChange={() => toggleDone(index)}
-                />
-                {item.done ? (
-                  <DoneItem>{item.name}</DoneItem>
-                ) : (
-                  <PendingItem>{item.name}</PendingItem>
-                )}
-              </CheckboxContainer>
-              <SpecItemsWrapper>
-                <QuantityInput
-                  type="number"
-                  placeholder="Qtd"
-                  value={item.quantity > 0 ? item.quantity : ""}
-                  onChange={(e) => updateQuantity(index, parseInt(e.target.value) || 0)}
-                />
-                <PriceInput
-                  type="number"
-                  placeholder="Preço"
-                  step="0.01"
-                  value={item.price > 0 ? item.price : ""}
-                  onChange={(e) => {
-                    const inputValue = e.target.valueAsNumber || 0
-                    setItems(prevItems =>
-                      prevItems.map((item, i) =>
-                        i === index ? { ...item, price: inputValue } : item
-                      )
-                    );
-                  }}
-                  onBlur={() => updatePrice(index, item.price)}  // Atualiza quando o campo perde foco
-                />
-                <DeleteButton onClick={() => removeItem(index)}>Excluir</DeleteButton>
-              </SpecItemsWrapper> 
-            </ItemWrapper>           
-            <HistoryButton>
-              <button onClick={() => handleShowHistory(index)}>+ Histórico</button>
-            </HistoryButton>
-          </ItemContainer>
-        ))}
-      </ItemList>
-      {userId && <TotalPrice>Total: R$ {total.toFixed(2)}</TotalPrice>}
-      <ToastContainer />
-    </Container>
+                </CheckboxContainer>
+                <SpecItemsWrapper>
+                  <QuantityInput
+                    type="number"
+                    placeholder="Qtd"
+                    value={item.quantity > 0 ? item.quantity : ""}
+                    onChange={(e) => updateQuantity(index, parseInt(e.target.value) || 0)}
+                  />
+                  <PriceInput
+                    type="number"
+                    placeholder="Preço"
+                    step="0.01"
+                    value={item.price > 0 ? item.price : ""}
+                    onChange={(e) => {
+                      const inputValue = e.target.valueAsNumber || 0
+                      setItems(prevItems =>
+                        prevItems.map((item, i) =>
+                          i === index ? { ...item, price: inputValue } : item
+                        )
+                      );
+                    }}
+                    onBlur={() => updatePrice(index, item.price)}  // Atualiza quando o campo perde foco
+                  />
+                  <DeleteButton onClick={() => removeItem(index)}>Excluir</DeleteButton>
+                </SpecItemsWrapper> 
+              </ItemWrapper>           
+              <HistoryButton>
+                <button onClick={() => handleShowHistory(index)}>+ Histórico</button>
+              </HistoryButton>
+            </ItemContainer>
+          ))}
+        </ItemList>
+        {/* Controles de paginação */}
+        {filteredItems.length > itemsPerPage && (
+          <PaginationWrapper>
+            <button onClick={prevPage} disabled={currentPage === 1}>Anterior</button>
+            {Array.from({ length: Math.ceil(filteredItems.length / itemsPerPage) }, (_, i) => (
+              <ButtonNumbers 
+                key={i}
+                onClick={() => paginate(i + 1)}
+                style={{
+                  backgroundColor: currentPage === i + 1 ? 'var(--background-color)' : 'var(--foreground)',
+                  color: currentPage === i + 1 ? 'var(--text-color)' : 'var(--background-color)',
+                }}
+              >
+                {i}
+              </ButtonNumbers>
+            ))}
+            <button onClick={nextPage} disabled={currentPage === Math.ceil(filteredItems.length / itemsPerPage)}>
+              Próximo
+            </button>
+          </PaginationWrapper>
+        )}
+        {userId && <TotalPrice>Total: R$ {total.toFixed(2)}</TotalPrice>}
+        <ToastContainer />
+      </Container>
+    </ThemeProvider>    
   )
 }
