@@ -4,7 +4,6 @@ import { ShoppingListTypes } from './types'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import { ThemeProvider } from '@/contexts/ThemeContext'
-import { ThemeSwitcher } from '../ThemeSwitcher'
 import { Global, css } from '@emotion/react'
 import {
   Container,
@@ -34,6 +33,7 @@ import {
   InnerHeader,
   PaginationWrapper,
   ButtonNumbers,
+  ReportButton,
 } from './styles'
 import { auth } from '../../firebaseConfig'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
@@ -82,6 +82,34 @@ export const ShoppingList = () => {
 
   const addItem = () => {
     if (newItemName.trim()) {
+      // Verifica se o produto já existe na lista
+      const isDuplicate = items.some(
+        (item) => item.name.toLowerCase() === newItemName.toLowerCase()
+      )
+  
+      if (isDuplicate) {
+        toast.error("Este produto já está na lista!") // Exibe mensagem de erro
+        return // Impede a adição do item duplicado
+      }
+  
+      // Se não for duplicado, adiciona o novo item
+      const newItem: ShoppingListTypes = {
+        name: newItemName,
+        quantity: newItemQuantity,
+        price: newItemPrice,
+        done: false,
+        priceHistory: [],
+      }
+      setItems((prevItems) => [...prevItems, newItem])
+      setNewItemName("")
+      setNewItemQuantity(0)
+      setNewItemPrice(0)
+      toast.success("Produto adicionado com sucesso!") // Feedback de sucesso
+    }
+  }
+
+  /* const addItem = () => {
+    if (newItemName.trim()) {
       const newItem: ShoppingListTypes = {
         name: newItemName,
         quantity: newItemQuantity,
@@ -94,7 +122,7 @@ export const ShoppingList = () => {
       setNewItemQuantity(0)
       setNewItemPrice(0)
     }
-  }
+  } */
 
   const handleShowHistory = (index: number) => {
     const item = items[index]
@@ -263,7 +291,6 @@ export const ShoppingList = () => {
         <Container>
         <Header>
           <Title>Lista de Compras</Title>
-          <ThemeSwitcher />        
         </Header>
 
         {!userId ? (
@@ -273,7 +300,9 @@ export const ShoppingList = () => {
             <InnerHeader>
               <ExitButton onClick={handleLogout}>Sair</ExitButton>
             </InnerHeader>
-            <button onClick={handleDownloadPDF}>Baixar Relatório em PDF</button>
+            <ReportButton>
+              <button onClick={handleDownloadPDF}>Baixar Relatório em PDF</button>
+            </ReportButton>
             <Modal
               isOpen={modalIsOpen}
               onRequestClose={handleCloseModal}
@@ -357,73 +386,77 @@ export const ShoppingList = () => {
             </SearchContainer>
           </>
         )}
-
         <ItemList>
-          {currentItems.map((item, index) => (
-            <ItemContainer key={index}>
-              <ItemWrapper>
-                <CheckboxContainer>
-                  <Checkbox
-                    type="checkbox"
-                    checked={item.done}
-                    onChange={() => toggleDone(index)}
-                  />
-                  {item.done ? (
-                    <DoneItem>{item.name}</DoneItem>
-                  ) : (
-                    <PendingItem>{item.name}</PendingItem>
-                  )}
-                </CheckboxContainer>
-                <SpecItemsWrapper>
-                  <QuantityInput
-                    type="number"
-                    placeholder="Qtd"
-                    value={item.quantity > 0 ? item.quantity : ""}
-                    onChange={(e) => updateQuantity(index, parseInt(e.target.value) || 0)}
-                  />
-                  <PriceInput
-                    type="number"
-                    placeholder="Preço"
-                    step="0.01"
-                    value={item.price > 0 ? item.price : ""}
-                    onChange={(e) => {
-                      const inputValue = e.target.valueAsNumber || 0
-                      setItems(prevItems =>
-                        prevItems.map((item, i) =>
-                          i === index ? { ...item, price: inputValue } : item
-                        )
-                      );
-                    }}
-                    onBlur={() => updatePrice(index, item.price)}  // Atualiza quando o campo perde foco
-                  />
-                  <DeleteButton onClick={() => removeItem(index)}>Excluir</DeleteButton>
-                </SpecItemsWrapper> 
-              </ItemWrapper>           
-              <HistoryButton>
-                <button onClick={() => handleShowHistory(index)}>+ Histórico</button>
-              </HistoryButton>
-            </ItemContainer>
-          ))}
+          {currentItems.map((item, index) => {
+            // Calcula o índice real na lista completa (filteredItems)
+            const realIndex = indexOfFirstItem + index
+
+            return (
+              <ItemContainer key={realIndex}>
+                <ItemWrapper>
+                  <CheckboxContainer>
+                    <Checkbox
+                      type="checkbox"
+                      checked={item.done}
+                      onChange={() => toggleDone(realIndex)} // Usa o índice real
+                    />
+                    {item.done ? (
+                      <DoneItem>{item.name}</DoneItem>
+                    ) : (
+                      <PendingItem>{item.name}</PendingItem>
+                    )}
+                  </CheckboxContainer>
+                  <SpecItemsWrapper>
+                    <QuantityInput
+                      type="number"
+                      placeholder="Qtd"
+                      value={item.quantity > 0 ? item.quantity : ""}
+                      onChange={(e) => updateQuantity(realIndex, parseInt(e.target.value) || 0)} // Usa o índice real
+                    />
+                    <PriceInput
+                      type="number"
+                      placeholder="Preço"
+                      step="0.01"
+                      value={item.price > 0 ? item.price : ""}
+                      onChange={(e) => {
+                        const inputValue = e.target.valueAsNumber || 0
+                        setItems((prevItems) =>
+                          prevItems.map((item, i) =>
+                            i === realIndex ? { ...item, price: inputValue } : item // Usa o índice real
+                          )
+                        );
+                      }}
+                      onBlur={() => updatePrice(realIndex, item.price)} // Usa o índice real
+                    />
+                    <DeleteButton onClick={() => removeItem(realIndex)}>Excluir</DeleteButton> {/* Usa o índice real */}
+                  </SpecItemsWrapper>
+                </ItemWrapper>
+                <HistoryButton>
+                  <button onClick={() => handleShowHistory(realIndex)}>+ Histórico</button> {/* Usa o índice real */}
+                </HistoryButton>
+              </ItemContainer>
+            )
+          })}
         </ItemList>
         {/* Controles de paginação */}
         {filteredItems.length > itemsPerPage && (
           <PaginationWrapper>
-            <button onClick={prevPage} disabled={currentPage === 1}>Anterior</button>
+            <ButtonNumbers onClick={prevPage} disabled={currentPage === 1}>Anterior</ButtonNumbers>
             {Array.from({ length: Math.ceil(filteredItems.length / itemsPerPage) }, (_, i) => (
               <ButtonNumbers 
-                key={i}
+                key={i + 1} // Chave única baseada no número da página
                 onClick={() => paginate(i + 1)}
                 style={{
-                  backgroundColor: currentPage === i + 1 ? 'var(--background-color)' : 'var(--foreground)',
-                  color: currentPage === i + 1 ? 'var(--text-color)' : 'var(--background-color)',
+                  backgroundColor: currentPage === i + 1 ? 'var(--foreground)' : 'var(--background-color)',
+                  color: currentPage === i + 1 ? 'var(--background-color)' : 'var(--text-color)',
                 }}
               >
-                {i}
+                {i + 1} {/* Exibe o número da página começando em 1 */}
               </ButtonNumbers>
             ))}
-            <button onClick={nextPage} disabled={currentPage === Math.ceil(filteredItems.length / itemsPerPage)}>
+            <ButtonNumbers onClick={nextPage} disabled={currentPage === Math.ceil(filteredItems.length / itemsPerPage)}>
               Próximo
-            </button>
+            </ButtonNumbers>
           </PaginationWrapper>
         )}
         {userId && <TotalPrice>Total: R$ {total.toFixed(2)}</TotalPrice>}
