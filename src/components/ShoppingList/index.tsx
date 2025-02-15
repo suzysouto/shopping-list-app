@@ -56,7 +56,7 @@ export const ShoppingList = () => {
   const [currentHistory, setCurrentHistory] = useState<{ price: number; date: string }[]>([])
   const [modalIsOpen, setModalIsOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage] = useState(5)
+  const [itemsPerPage] = useState(10)
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -100,29 +100,16 @@ export const ShoppingList = () => {
         done: false,
         priceHistory: [],
       }
-      setItems((prevItems) => [...prevItems, newItem])
+
+      const updatedItems = [...items, newItem]
+      const sortedItems = sortItemsAlphabetically(updatedItems) // Ordena a lista após adiconar
+      setItems(sortedItems)
       setNewItemName("")
       setNewItemQuantity(0)
       setNewItemPrice(0)
       toast.success("Produto adicionado com sucesso!") // Feedback de sucesso
     }
   }
-
-  /* const addItem = () => {
-    if (newItemName.trim()) {
-      const newItem: ShoppingListTypes = {
-        name: newItemName,
-        quantity: newItemQuantity,
-        price: newItemPrice,
-        done: false,
-        priceHistory: [], 
-      }
-      setItems((prevItems) => [...prevItems, newItem])
-      setNewItemName("")
-      setNewItemQuantity(0)
-      setNewItemPrice(0)
-    }
-  } */
 
   const handleShowHistory = (index: number) => {
     const item = items[index]
@@ -216,7 +203,13 @@ export const ShoppingList = () => {
     }
   }
 
-  const filteredItems = items.filter(item =>
+  const sortItemsAlphabetically = (items: ShoppingListTypes[]) => {
+    return items.sort((a, b) => a.name.localeCompare(b.name))
+  }
+
+  const sortedItems = sortItemsAlphabetically(items) // Ordena a lista alfabeticamente
+
+  const filteredItems = sortedItems.filter(item =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
@@ -277,6 +270,10 @@ export const ShoppingList = () => {
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber)
   const nextPage = () => setCurrentPage((prev) => Math.min(prev + 1, Math.ceil(filteredItems.length / itemsPerPage)))
   const prevPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1))
+
+  const findOriginalIndex = (itemName: string) => {
+    return items.findIndex((item) => item.name === itemName)
+  }
 
   return (
     <ThemeProvider>
@@ -387,18 +384,19 @@ export const ShoppingList = () => {
           </>
         )}
         <ItemList>
-          {currentItems.map((item, index) => {
-            // Calcula o índice real na lista completa (filteredItems)
-            const realIndex = indexOfFirstItem + index
+          {currentItems.map((item) => {
+
+            // Encontra o índice original na lista completa (items)
+            const originalIndex = findOriginalIndex(item.name)
 
             return (
-              <ItemContainer key={realIndex}>
+              <ItemContainer key={originalIndex}>
                 <ItemWrapper>
                   <CheckboxContainer>
                     <Checkbox
                       type="checkbox"
                       checked={item.done}
-                      onChange={() => toggleDone(realIndex)} // Usa o índice real
+                      onChange={() => toggleDone(originalIndex)} // Usa o índice original
                     />
                     {item.done ? (
                       <DoneItem>{item.name}</DoneItem>
@@ -411,7 +409,7 @@ export const ShoppingList = () => {
                       type="number"
                       placeholder="Qtd"
                       value={item.quantity > 0 ? item.quantity : ""}
-                      onChange={(e) => updateQuantity(realIndex, parseInt(e.target.value) || 0)} // Usa o índice real
+                      onChange={(e) => updateQuantity(originalIndex, parseInt(e.target.value) || 0)} // Usa o índice original
                     />
                     <PriceInput
                       type="number"
@@ -422,17 +420,17 @@ export const ShoppingList = () => {
                         const inputValue = e.target.valueAsNumber || 0
                         setItems((prevItems) =>
                           prevItems.map((item, i) =>
-                            i === realIndex ? { ...item, price: inputValue } : item // Usa o índice real
+                            i === originalIndex ? { ...item, price: inputValue } : item // Usa o índice original
                           )
                         );
                       }}
-                      onBlur={() => updatePrice(realIndex, item.price)} // Usa o índice real
+                      onBlur={() => updatePrice(originalIndex, item.price)} // Usa o índice original
                     />
-                    <DeleteButton onClick={() => removeItem(realIndex)}>Excluir</DeleteButton> {/* Usa o índice real */}
+                    <DeleteButton onClick={() => removeItem(originalIndex)}>Excluir</DeleteButton> {/* Usa o índice original */}
                   </SpecItemsWrapper>
                 </ItemWrapper>
                 <HistoryButton>
-                  <button onClick={() => handleShowHistory(realIndex)}>+ Histórico</button> {/* Usa o índice real */}
+                  <button onClick={() => handleShowHistory(originalIndex)}>+ Histórico</button> {/* Usa o índice original */}
                 </HistoryButton>
               </ItemContainer>
             )

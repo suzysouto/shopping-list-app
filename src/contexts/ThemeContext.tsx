@@ -24,7 +24,7 @@ export const ThemeContext = createContext({
 });
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-  const [theme, setTheme] = useState("light");
+  const [theme, setTheme] = useState("dark");
 
   // Função para alternar entre os temas
   const toggleTheme = () => {
