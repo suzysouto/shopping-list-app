@@ -308,7 +308,7 @@ export const ShoppingList = () => {
     if (currentPendingItems.length === 0 && currentPage > 1) {
       setCurrentPage(currentPage - 1)
     }
-  }, [pendingItems, currentPage])
+  }, [pendingItems, currentPage, currentPendingItems.length])
 
 
   const total = filteredItems.reduce((acc, item) => acc + item.price * item.quantity, 0)

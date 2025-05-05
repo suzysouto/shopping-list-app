@@ -6,6 +6,7 @@ import {
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
   getRedirectResult
 } from 'firebase/auth'
 import { FcGoogle } from 'react-icons/fc'; // Importe o ícone do Google
@@ -22,7 +23,7 @@ export const LoginRegister = ({ setUserId }: LoginRegisterTypes) => {
     try {
       const result = await signInWithPopup(auth, googleProvider)
       // Ou use signInWithRedirect para mobile:
-      // await signInWithRedirect(auth, googleProvider)
+      await signInWithRedirect(auth, googleProvider)
       setUserId(result.user.uid)
     } catch (error) {
       console.error("Erro ao fazer login com Google: ", error)
@@ -44,7 +45,7 @@ export const LoginRegister = ({ setUserId }: LoginRegisterTypes) => {
       }
     }
     checkRedirectResult()
-  }, [])
+  }, [setUserId])
 
   // Função para fazer login do usuário
   const handleLogin = async () => {
