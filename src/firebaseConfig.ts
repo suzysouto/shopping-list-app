@@ -4,13 +4,13 @@ import { getFirestore } from "firebase/firestore"
 
 // Configurações do Firebase
 const firebaseConfig = {
-  apiKey: "AIzaSyDTlf_AuVo98cwsYshSWZqjzO8bfKNp08s",
-  authDomain: "buy-list-48fd7.firebaseapp.com",
-  projectId: "buy-list-48fd7",
-  storageBucket: "buy-list-48fd7.appspot.com",
-  messagingSenderId: "489974429290",
-  appId: "1:489974429290:web:a121b88ad6cc2c6ec6fc13"
-};
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+}
 
 // Inicializando o Firebase
 const app = initializeApp(firebaseConfig)
@@ -18,11 +18,13 @@ const app = initializeApp(firebaseConfig)
 // Inicializando o Auth e Firestore
 export const auth = getAuth(app)
 export const db = getFirestore(app)
-auth.useDeviceLanguage()
+
+// Apenas para desenvolvimento (remova em produção)
+if (process.env.NODE_ENV === 'development') {
+  auth.settings.appVerificationDisabledForTesting = true
+}
 
 const googleProvider = new GoogleAuthProvider()
-googleProvider.setCustomParameters({
-  prompt: 'select_account' // Força a seleção de conta sempre
-})
+googleProvider.setCustomParameters({ prompt: "select_account" })
 
 export { googleProvider }

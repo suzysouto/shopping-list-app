@@ -1,7 +1,7 @@
 // pages/index.tsx
-import { ShoppingList } from '@/components/ShoppingList';
-import { ThemeSwitcher } from '@/components/ThemeSwitcher';
-import Head from 'next/head';
+import { ShoppingList } from '@/components/ShoppingList'
+import { ThemeSwitcher } from '@/components/ThemeSwitcher'
+import Head from 'next/head'
 
 const Home = () => {
   return (

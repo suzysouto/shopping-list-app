@@ -22,23 +22,31 @@ export const LoginRegister = ({ setUserId }: LoginRegisterTypes) => {
   // Configuração inicial
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) setUserId(user.uid);
-    });
-    return () => unsubscribe();
+      if (user) setUserId(user.uid)
+    })
+    return () => unsubscribe()
   }, [setUserId])
 
   // Função universal para login com Google
   const handleGoogleLogin = async () => {
-    setIsLoading(true);
+    setIsLoading(true)
     try {
-      // Sempre usa popup - funciona na maioria dos casos
       const result = await signInWithPopup(auth, googleProvider);
-      setUserId(result.user.uid);
+      setUserId(result.user.uid)
+      toast.success("Login realizado com sucesso!")
     } catch (error) {
-      console.error("Erro no login:", error);
-      toast.error("Falha no login. Por favor, tente novamente.");
+      console.error("Erro:", error)
+      toast.error("Falha no login com Google")
+      
+      // Fallback para mobile
+      if (typeof window !== 'undefined' && /Android|iPhone|iPad/i.test(navigator.userAgent)) {
+        toast.info("Redirecionando para login...")
+        window.location.assign(
+          `https://${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}.firebaseapp.com/__/auth/handler`
+        )
+      }
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
   }
 
