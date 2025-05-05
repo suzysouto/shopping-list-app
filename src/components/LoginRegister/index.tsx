@@ -30,15 +30,19 @@ export const LoginRegister = ({ setUserId }: LoginRegisterTypes) => {
 
   // Função para login com Google
   const handleGoogleLogin = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      if (isMobileDevice) {
-        // Usa redirect em dispositivos móveis
-        await signInWithRedirect(auth, googleProvider)
-      } else {
-        // Usa popup em desktop
-        const result = await signInWithPopup(auth, googleProvider)
-        setUserId(result.user.uid)
+      // Tenta primeiro com popup (alguns mobiles permitem)
+      try {
+        const result = await signInWithPopup(auth, googleProvider);
+        setUserId(result.user.uid);
+      } catch (popupError) {
+        if (isMobileDevice) {
+          // Se popup falhar e for mobile, usa redirect
+          await signInWithRedirect(auth, googleProvider);
+        } else {
+          throw popupError; // Rejeita o erro se não for mobile
+        }
       }
     } catch (error) {
       console.error("Erro ao fazer login com Google: ", error)
