@@ -3,7 +3,9 @@ import { Html, Head, Main, NextScript } from "next/document";
 export default function Document() {
   return (
     <Html lang="en">
-      <Head />
+      <Head>        
+        <meta name="referrer" content="no-referrer-when-downgrade" />
+      </Head>
       <body>
         <Main />
         <NextScript />
