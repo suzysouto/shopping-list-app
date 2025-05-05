@@ -51,3 +51,29 @@ export const Button = styled.button`
     background-color: var(--button-hover-background-color);
   }
 `
+
+export const GoogleButton = styled.button`
+  padding: 0.3rem;
+  margin: 0.5rem 0 0;
+  background-color: white;
+  color: #555;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background-color: #f5f5f5;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+`

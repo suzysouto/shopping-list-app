@@ -34,6 +34,8 @@ import {
   PaginationWrapper,
   ButtonNumbers,
   ReportButton,
+  SectionWrapper,
+  SectionTitle,
 } from './styles'
 import { auth } from '../../firebaseConfig'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
@@ -43,6 +45,79 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 Modal.setAppElement('body')
+
+const ShoppingListSection = ({
+  title,
+  items,
+  onToggleDone,
+  onUpdateQuantity,
+  onUpdatePrice,
+  onRemoveItem,
+  onShowHistory,
+  isCompletedList = false,
+}: {
+  title: string
+  items: ShoppingListTypes[]
+  onToggleDone: (index: number) => void
+  onUpdateQuantity: (index: number, quantity: number) => void
+  onUpdatePrice: (index: number, price: number) => void
+  onRemoveItem: (index: number) => void
+  onShowHistory: (index: number) => void
+  isCompletedList?: boolean
+}) => {
+  if (items.length === 0) return null
+
+  return (
+    <SectionWrapper>
+      <SectionTitle>{title}</SectionTitle>
+      <ItemList>
+        {items.map((item, index) => (
+          <ItemContainer key={index} className={isCompletedList ? 'completed' : ''}>
+            <ItemWrapper>
+              <CheckboxContainer>
+                <Checkbox
+                  type="checkbox"
+                  checked={item.done}
+                  onChange={() => onToggleDone(index)}
+                />
+                {item.done ? (
+                  <DoneItem>{item.name}</DoneItem>
+                ) : (
+                  <PendingItem>{item.name}</PendingItem>
+                )}
+              </CheckboxContainer>
+              <SpecItemsWrapper>
+                <QuantityInput
+                  type="number"
+                  placeholder="Qtd"
+                  value={item.quantity > 0 ? item.quantity : ""}
+                  onChange={(e) => onUpdateQuantity(index, parseInt(e.target.value) || 0)}
+                />
+                <PriceInput
+                  type="number"
+                  placeholder="Preço"
+                  step="0.01"
+                  value={item.price > 0 ? item.price : ""}
+                  onChange={(e) => {
+                    const inputValue = e.target.valueAsNumber || 0;
+                    onUpdatePrice(index, inputValue);
+                  }}
+                  onBlur={() => onUpdatePrice(index, item.price)}
+                />
+                <DeleteButton onClick={() => onRemoveItem(index)}>
+                  Excluir
+                </DeleteButton>
+              </SpecItemsWrapper>
+            </ItemWrapper>
+            <HistoryButton>
+              <button onClick={() => onShowHistory(index)}>+ Histórico</button>
+            </HistoryButton>
+          </ItemContainer>
+        ))}
+      </ItemList>
+    </SectionWrapper>
+  )
+}
 
 export const ShoppingList = () => {
   const [items, setItems] = useState<ShoppingListTypes[]>([])
@@ -209,9 +284,32 @@ export const ShoppingList = () => {
 
   const sortedItems = sortItemsAlphabetically(items) // Ordena a lista alfabeticamente
 
+  /* const filteredItems = sortedItems.filter(item =>
+    item.name.toLowerCase().includes(searchTerm.toLowerCase())
+  ) */
+
+  // Corrigindo a busca para considerar itens pendentes e concluídos
   const filteredItems = sortedItems.filter(item =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase())
   )
+
+  // Itens pendentes filtrados e paginados
+  const pendingItems = filteredItems.filter(item => !item.done)
+  const indexOfLastPendingItem = currentPage * itemsPerPage
+  const indexOfFirstPendingItem = indexOfLastPendingItem - itemsPerPage
+  const currentPendingItems = pendingItems.slice(indexOfFirstPendingItem, indexOfLastPendingItem)
+
+  // Itens concluídos (não paginados)
+  const completedItems = filteredItems.filter(item => item.done)
+
+  // Corrigindo a paginação para atualizar quando itens são marcados como concluídos
+  useEffect(() => {
+    // Se a página atual ficar vazia após marcar itens como concluídos, volta uma página
+    if (currentPendingItems.length === 0 && currentPage > 1) {
+      setCurrentPage(currentPage - 1)
+    }
+  }, [pendingItems, currentPage])
+
 
   const total = filteredItems.reduce((acc, item) => acc + item.price * item.quantity, 0)
 
@@ -372,93 +470,139 @@ export const ShoppingList = () => {
               <button type="button" onClick={handleSaveList}>Salvar Lista</button>
             </Form>
 
-            <SearchContainer>
+            <SearchContainer onSubmit={(e) => e.preventDefault()}>
               <input
                 type="text"
                 placeholder="Buscar produto"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value)
+                  setCurrentPage(1) // Resetar a página ao buscar
+                }}
               />
-              <button>Buscar</button>
+              <button type="button">Buscar</button>
             </SearchContainer>
           </>
         )}
-        <ItemList>
-          {currentItems.map((item) => {
+      {/* Lista principal (itens pendentes) - usando currentPendingItems */}
+      <ShoppingListSection
+          title="Itens Pendentes"
+          items={currentPendingItems}
+          onToggleDone={(index) => {
+            const item = currentPendingItems[index]
+            const originalIndex = items.findIndex(i => i.name === item.name)
+            if (originalIndex !== -1) {
+              toggleDone(originalIndex)
+            }
+          }}
+          onUpdateQuantity={(index, quantity) => {
+            const item = currentPendingItems[index]
+            const originalIndex = items.findIndex(i => i.name === item.name)
+            if (originalIndex !== -1) {
+              updateQuantity(originalIndex, quantity)
+            }
+          }}
+          onUpdatePrice={(index, price) => {
+            const item = currentPendingItems[index]
+            const originalIndex = items.findIndex(i => i.name === item.name)
+            if (originalIndex !== -1) {
+              updatePrice(originalIndex, price)
+            }
+          }}
+          onRemoveItem={(index) => {
+            const item = currentPendingItems[index]
+            const originalIndex = items.findIndex(i => i.name === item.name)
+            if (originalIndex !== -1) {
+              removeItem(originalIndex)
+            }
+          }}
+          onShowHistory={(index) => {
+            const item = currentPendingItems[index]
+            const originalIndex = items.findIndex(i => i.name === item.name)
+            if (originalIndex !== -1) {
+              handleShowHistory(originalIndex)
+            }
+          }}
+        />
 
-            // Encontra o índice original na lista completa (items)
-            const originalIndex = findOriginalIndex(item.name)
+        {/* Lista de itens concluídos - usando completedItems */}
+        <ShoppingListSection
+          title="Itens Concluídos"
+          items={completedItems}
+          onToggleDone={(index) => {
+            const item = completedItems[index]
+            const originalIndex = items.findIndex(i => i.name === item.name)
+            if (originalIndex !== -1) {
+              toggleDone(originalIndex)
+            }
+          }}
+          onUpdateQuantity={(index, quantity) => {
+            const item = completedItems[index]
+            const originalIndex = items.findIndex(i => i.name === item.name)
+            if (originalIndex !== -1) {
+              updateQuantity(originalIndex, quantity)
+            }
+          }}
+          onUpdatePrice={(index, price) => {
+            const item = completedItems[index]
+            const originalIndex = items.findIndex(i => i.name === item.name)
+            if (originalIndex !== -1) {
+              updatePrice(originalIndex, price)
+            }
+          }}
+          onRemoveItem={(index) => {
+            const item = completedItems[index]
+            const originalIndex = items.findIndex(i => i.name === item.name)
+            if (originalIndex !== -1) {
+              removeItem(originalIndex)
+            }
+          }}
+          onShowHistory={(index) => {
+            const item = completedItems[index]
+            const originalIndex = items.findIndex(i => i.name === item.name)
+            if (originalIndex !== -1) {
+              handleShowHistory(originalIndex)
+            }
+          }}
+          isCompletedList={true}
+        />
 
-            return (
-              <ItemContainer key={originalIndex}>
-                <ItemWrapper>
-                  <CheckboxContainer>
-                    <Checkbox
-                      type="checkbox"
-                      checked={item.done}
-                      onChange={() => toggleDone(originalIndex)} // Usa o índice original
-                    />
-                    {item.done ? (
-                      <DoneItem>{item.name}</DoneItem>
-                    ) : (
-                      <PendingItem>{item.name}</PendingItem>
-                    )}
-                  </CheckboxContainer>
-                  <SpecItemsWrapper>
-                    <QuantityInput
-                      type="number"
-                      placeholder="Qtd"
-                      value={item.quantity > 0 ? item.quantity : ""}
-                      onChange={(e) => updateQuantity(originalIndex, parseInt(e.target.value) || 0)} // Usa o índice original
-                    />
-                    <PriceInput
-                      type="number"
-                      placeholder="Preço"
-                      step="0.01"
-                      value={item.price > 0 ? item.price : ""}
-                      onChange={(e) => {
-                        const inputValue = e.target.valueAsNumber || 0
-                        setItems((prevItems) =>
-                          prevItems.map((item, i) =>
-                            i === originalIndex ? { ...item, price: inputValue } : item // Usa o índice original
-                          )
-                        );
-                      }}
-                      onBlur={() => updatePrice(originalIndex, item.price)} // Usa o índice original
-                    />
-                    <DeleteButton onClick={() => removeItem(originalIndex)}>Excluir</DeleteButton> {/* Usa o índice original */}
-                  </SpecItemsWrapper>
-                </ItemWrapper>
-                <HistoryButton>
-                  <button onClick={() => handleShowHistory(originalIndex)}>+ Histórico</button> {/* Usa o índice original */}
-                </HistoryButton>
-              </ItemContainer>
-            )
-          })}
-        </ItemList>
-        {/* Controles de paginação */}
-        {filteredItems.length > itemsPerPage && (
+        {/* Controles de paginação - agora baseado em pendingItems */}
+        {pendingItems.length > itemsPerPage && (
           <PaginationWrapper>
-            <ButtonNumbers onClick={prevPage} disabled={currentPage === 1}>Anterior</ButtonNumbers>
-            {Array.from({ length: Math.ceil(filteredItems.length / itemsPerPage) }, (_, i) => (
+            <ButtonNumbers 
+              onClick={() => {
+                prevPage()
+              }} 
+              disabled={currentPage === 1}
+            >
+              Anterior
+            </ButtonNumbers>
+            {Array.from({ length: Math.ceil(pendingItems.length / itemsPerPage) }, (_, i) => (
               <ButtonNumbers 
-                key={i + 1} // Chave única baseada no número da página
+                key={i + 1}
                 onClick={() => paginate(i + 1)}
                 style={{
                   backgroundColor: currentPage === i + 1 ? 'var(--foreground)' : 'var(--background-color)',
                   color: currentPage === i + 1 ? 'var(--background-color)' : 'var(--text-color)',
                 }}
               >
-                {i + 1} {/* Exibe o número da página começando em 1 */}
+                {i + 1}
               </ButtonNumbers>
             ))}
-            <ButtonNumbers onClick={nextPage} disabled={currentPage === Math.ceil(filteredItems.length / itemsPerPage)}>
+            <ButtonNumbers 
+              onClick={() => {
+                nextPage()
+              }} 
+              disabled={currentPage === Math.ceil(pendingItems.length / itemsPerPage)}
+            >
               Próximo
             </ButtonNumbers>
           </PaginationWrapper>
         )}
-        {userId && <TotalPrice>Total: R$ {total.toFixed(2)}</TotalPrice>}
-        <ToastContainer />
+      
+      {userId && <TotalPrice>Total: R$ {total.toFixed(2)}</TotalPrice>}
+      <ToastContainer />
       </Container>
     </ThemeProvider>    
   )

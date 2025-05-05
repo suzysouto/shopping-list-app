@@ -1,13 +1,16 @@
-// Representa um item individual na lista de compras
+export interface PriceHistoryEntry {
+  price: number;
+  date: string;
+}
+
 export interface ShoppingListTypes {
   name: string
   price: number
   quantity: number
   done: boolean
-  priceHistory?: { price: number; date: string }[]
+  priceHistory?: PriceHistoryEntry[]
 }
 
-// Representa a lista de compras completa com os itens e o nome do supermercado
 export type UserShoppingList = {
   items: ShoppingListTypes[]
   supermarket: string
