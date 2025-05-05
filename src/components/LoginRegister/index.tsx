@@ -1,7 +1,7 @@
 import { LoginRegisterTypes } from './types'
 import { Container, Form, Button, GoogleButton } from './styles'
 import { useEffect, useState } from 'react';
-import { auth, googleProvider } from '../../firebaseConfig'; // Importe o googleProvider
+import { auth, googleProvider } from '../../firebaseConfig'
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword,
@@ -9,32 +9,52 @@ import {
   signInWithRedirect,
   getRedirectResult
 } from 'firebase/auth'
-import { FcGoogle } from 'react-icons/fc'; // Importe o ícone do Google
+import { FcGoogle } from 'react-icons/fc'
+import { toast } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
+
+const checkIsMobile = () => {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+}
 
 export const LoginRegister = ({ setUserId }: LoginRegisterTypes) => {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isRegistering, setIsRegistering] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [isMobileDevice, setIsMobileDevice] = useState(false)  
+
+  useEffect(() => {
+    setIsMobileDevice(checkIsMobile());
+  }, [])
 
   // Função para login com Google
   const handleGoogleLogin = async () => {
     setIsLoading(true)
     try {
-      const result = await signInWithPopup(auth, googleProvider)
-      // Ou use signInWithRedirect para mobile:
-      await signInWithRedirect(auth, googleProvider)
-      setUserId(result.user.uid)
+      if (isMobileDevice) {
+        // Usa redirect em dispositivos móveis
+        await signInWithRedirect(auth, googleProvider)
+      } else {
+        // Usa popup em desktop
+        const result = await signInWithPopup(auth, googleProvider)
+        setUserId(result.user.uid)
+      }
     } catch (error) {
       console.error("Erro ao fazer login com Google: ", error)
+      toast.error(
+        isMobileDevice 
+          ? "Redirecionamento falhou. Tente novamente." 
+          : "Falha ao abrir popup. Tente novamente."
+      )
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Função para lidar com o resultado do redirect (opcional)
+  // Adicione este useEffect para lidar com o resultado do redirect
   useEffect(() => {
-    const checkRedirectResult = async () => {
+    const handleRedirectResult = async () => {
       try {
         const result = await getRedirectResult(auth)
         if (result?.user) {
@@ -44,7 +64,8 @@ export const LoginRegister = ({ setUserId }: LoginRegisterTypes) => {
         console.error("Erro ao processar redirect: ", error)
       }
     }
-    checkRedirectResult()
+    
+    handleRedirectResult()
   }, [setUserId])
 
   // Função para fazer login do usuário
@@ -120,9 +141,14 @@ export const LoginRegister = ({ setUserId }: LoginRegisterTypes) => {
           <Button onClick={handleLogin} disabled={isLoading}>
             {isLoading ? 'Entrando...' : 'Entrar'}
           </Button>
-          <GoogleButton onClick={handleGoogleLogin} disabled={isLoading}>
+          <GoogleButton 
+            onClick={handleGoogleLogin} 
+            disabled={isLoading}
+          >
             <FcGoogle size={20} />
-            {isLoading ? 'Carregando...' : 'Entrar com Google'}
+            {isLoading ? 'Carregando...' : (
+              isMobileDevice ? 'Continuar com Google' : 'Entrar com Google'
+            )}
           </GoogleButton>
           <Button onClick={() => setIsRegistering(true)}>
             Criar conta
