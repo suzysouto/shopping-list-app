@@ -6,7 +6,6 @@ import {
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword,
   signInWithPopup,
-  signInWithRedirect,
   getRedirectResult
 } from 'firebase/auth'
 import { FcGoogle } from 'react-icons/fc'; // Importe o ícone do Google

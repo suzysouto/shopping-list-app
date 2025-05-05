@@ -360,18 +360,18 @@ export const ShoppingList = () => {
   } 
   
   // Paginação: calcula os itens visíveis
-  const indexOfLastItem = currentPage * itemsPerPage
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage
-  const currentItems = filteredItems.slice(indexOfFirstItem, indexOfLastItem)
+  /* const indexOfLastItem = currentPage * itemsPerPage */
+  /* const indexOfFirstItem = indexOfLastItem - itemsPerPage */
+  /* const currentItems = filteredItems.slice(indexOfFirstItem, indexOfLastItem) */
 
   // Funções de navegação
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber)
   const nextPage = () => setCurrentPage((prev) => Math.min(prev + 1, Math.ceil(filteredItems.length / itemsPerPage)))
   const prevPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1))
 
-  const findOriginalIndex = (itemName: string) => {
+  /* const findOriginalIndex = (itemName: string) => {
     return items.findIndex((item) => item.name === itemName)
-  }
+  } */
 
   return (
     <ThemeProvider>
