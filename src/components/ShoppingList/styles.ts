@@ -401,3 +401,24 @@ export const ReportButton = styled.div`
     }
   }
 `
+
+export const SectionTitle = styled.h3`
+  margin: 20px 0 10px;
+  color: var(--text-color);
+  font-size: 1.2rem;
+  border-bottom: 1px solid var(--foreground);
+  padding-bottom: 5px;
+`
+
+export const CompletedSection = styled.div`
+  opacity: 0.8;
+  margin-top: 30px;
+  
+  ${ItemContainer} {
+    background-color: var(--completed-item-bg);
+  }
+`
+
+export const SectionWrapper = styled.div`
+  margin-top: 20px;
+`
