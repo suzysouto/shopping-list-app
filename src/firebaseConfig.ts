@@ -18,6 +18,7 @@ const app = initializeApp(firebaseConfig)
 // Inicializando o Auth e Firestore
 export const auth = getAuth(app)
 export const db = getFirestore(app)
+auth.useDeviceLanguage()
 
 // Fazendo login pela conta Google
 export const googleProvider = new GoogleAuthProvider()

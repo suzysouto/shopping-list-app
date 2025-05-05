@@ -1,29 +1,36 @@
 import { LoginRegisterTypes } from './types'
 import { Container, Form, Button, GoogleButton } from './styles'
 import { useEffect, useState } from 'react';
-import { auth, googleProvider } from '../../firebaseConfig'
+import { auth } from '../../firebaseConfig'
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword,
   signInWithPopup,
   signInWithRedirect,
-  getRedirectResult
+  getRedirectResult,
+  GoogleAuthProvider,
+  onAuthStateChanged
 } from 'firebase/auth'
 import { FcGoogle } from 'react-icons/fc'
 import { toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 
-const checkIsMobile = () => {
-  const userAgent = navigator.userAgent;
-  const isIOS = /iPad|iPhone|iPod/.test(userAgent);
-  const isSafari = /Safari/.test(userAgent) && !/Chrome/.test(userAgent);
-  
-  // Para iOS Safari, forçar popup pode funcionar melhor
-  if (isIOS && isSafari) {
-    return false; // Trata como desktop para usar popup
-  }
-  
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+// Função otimizada para detecção de mobile
+const useDeviceDetection = () => {
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const userAgent = navigator.userAgent
+    const isIOS = /iPad|iPhone|iPod/.test(userAgent)
+    const isSafari = /Safari/.test(userAgent) && !/Chrome/.test(userAgent)
+    
+    setIsMobile(
+      !(isIOS && isSafari) && // Exceção para iOS Safari
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent)
+    )
+  }, [])
+
+  return isMobile
 }
 
 export const LoginRegister = ({ setUserId }: LoginRegisterTypes) => {
@@ -31,59 +38,68 @@ export const LoginRegister = ({ setUserId }: LoginRegisterTypes) => {
   const [password, setPassword] = useState("")
   const [isRegistering, setIsRegistering] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [isMobileDevice, setIsMobileDevice] = useState(false)  
+  const isMobileDevice = useDeviceDetection()
 
+  // Configuração inicial e listener de autenticação
   useEffect(() => {
-    setIsMobileDevice(checkIsMobile());
-  }, [])
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) setUserId(user.uid)
+    })
 
-  // Função para login com Google
+    // Verifica resultado de redirecionamento
+    const checkRedirect = async () => {
+      try {
+        const result = await getRedirectResult(auth)
+        if (result?.user) setUserId(result.user.uid)
+      } catch (error) {
+        console.error("Erro no redirect:", error)
+      }
+    }
+    checkRedirect()
+
+    return () => unsubscribe()
+  }, [setUserId])
+
+  // Função dedicada para mobile
+  const handleMobileLogin = async () => {
+    try {
+      await signInWithRedirect(auth, new GoogleAuthProvider())
+      
+      // Fallback para verificar se o redirecionamento completou
+      setTimeout(async () => {
+        if (!auth.currentUser) {
+          try {
+            const result = await getRedirectResult(auth)
+            if (!result?.user) throw new Error("Redirecionamento não completado")
+          } catch (error) {
+            console.error("Erro no fallback:", error)
+            toast.error("Por favor, tente novamente")
+          }
+        }
+      }, 2000)
+    } catch (error) {
+      console.error("Erro no redirect mobile:", error)
+      throw error
+    }
+  }
+
+  // Função principal unificada
   const handleGoogleLogin = async () => {
     setIsLoading(true)
     try {
       if (isMobileDevice) {
-        // Solução robusta para mobile
-        await handleMobileGoogleLogin()
+        await handleMobileLogin()
       } else {
-        // Continua com popup para desktop
-        const result = await signInWithPopup(auth, googleProvider)
+        const result = await signInWithPopup(auth, new GoogleAuthProvider())
         setUserId(result.user.uid)
       }
     } catch (error) {
-      console.error("Erro ao fazer login com Google: ", error)
-      toast.error("Erro ao fazer login. Tente novamente.")
+      console.error("Erro no login:", error)
+      toast.error(isMobileDevice 
+        ? "Falha no redirecionamento. Tente novamente." 
+        : "Falha no popup. Tente novamente ou use outro método.")
     } finally {
       setIsLoading(false)
-    }
-  }
-
-  // Nova função específica para mobile
-  const handleMobileGoogleLogin = async () => {
-    // Primeiro tenta com redirect
-    try {
-      await signInWithRedirect(auth, googleProvider)
-      
-      // Adiciona um listener temporário para o redirecionamento
-      const unsubscribe = auth.onAuthStateChanged(user => {
-        if (user) {
-          setUserId(user.uid)
-          unsubscribe() // Remove o listener após sucesso
-        }
-      })
-      
-      // Timeout para evitar loop infinito
-      setTimeout(() => unsubscribe(), 30000) // 30 segundos
-    } catch (redirectError) {
-      console.log("Redirect falhou, tentando popup...", redirectError)
-      
-      // Se redirect falhar, tenta com popup (alguns navegadores mobile permitem)
-      try {
-        const result = await signInWithPopup(auth, googleProvider)
-        setUserId(result.user.uid)
-      } catch (popupError) {
-        console.error("Popup também falhou:", popupError)
-        throw popupError
-      }
     }
   }
 
