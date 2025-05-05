@@ -53,8 +53,8 @@ export const Button = styled.button`
 `
 
 export const GoogleButton = styled.button`
-  padding: 0.75rem;
-  margin: 0.5rem 0;
+  padding: 0.3rem;
+  margin: 0.5rem 0 0;
   background-color: white;
   color: #757575;
   border: 1px solid #ddd;
@@ -67,11 +67,9 @@ export const GoogleButton = styled.button`
   cursor: pointer;
   transition: all 0.3s ease;
   width: 100%;
-  max-width: 300px;
-
+  
   &:hover {
     background-color: #f5f5f5;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   }
 
   &:disabled {
@@ -80,7 +78,7 @@ export const GoogleButton = styled.button`
   }
 
   @media (max-width: 480px) {
-    font-size: 0.9rem;
-    padding: 0.8rem;
+    padding: 12px;
+    font-size: 16px;
   }
 `
