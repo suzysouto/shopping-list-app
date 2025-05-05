@@ -14,7 +14,16 @@ import { toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 
 const checkIsMobile = () => {
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+  const userAgent = navigator.userAgent;
+  const isIOS = /iPad|iPhone|iPod/.test(userAgent);
+  const isSafari = /Safari/.test(userAgent) && !/Chrome/.test(userAgent);
+  
+  // Para iOS Safari, forçar popup pode funcionar melhor
+  if (isIOS && isSafari) {
+    return false; // Trata como desktop para usar popup
+  }
+  
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
 }
 
 export const LoginRegister = ({ setUserId }: LoginRegisterTypes) => {
@@ -33,39 +42,65 @@ export const LoginRegister = ({ setUserId }: LoginRegisterTypes) => {
     setIsLoading(true)
     try {
       if (isMobileDevice) {
-        // Usa redirect em dispositivos móveis
-        await signInWithRedirect(auth, googleProvider)
+        // Solução robusta para mobile
+        await handleMobileGoogleLogin()
       } else {
-        // Usa popup em desktop
+        // Continua com popup para desktop
         const result = await signInWithPopup(auth, googleProvider)
         setUserId(result.user.uid)
       }
     } catch (error) {
       console.error("Erro ao fazer login com Google: ", error)
-      toast.error(
-        isMobileDevice 
-          ? "Redirecionamento falhou. Tente novamente." 
-          : "Falha ao abrir popup. Tente novamente."
-      )
+      toast.error("Erro ao fazer login. Tente novamente.")
     } finally {
       setIsLoading(false)
     }
   }
 
+  // Nova função específica para mobile
+  const handleMobileGoogleLogin = async () => {
+    // Primeiro tenta com redirect
+    try {
+      await signInWithRedirect(auth, googleProvider)
+      
+      // Adiciona um listener temporário para o redirecionamento
+      const unsubscribe = auth.onAuthStateChanged(user => {
+        if (user) {
+          setUserId(user.uid)
+          unsubscribe() // Remove o listener após sucesso
+        }
+      })
+      
+      // Timeout para evitar loop infinito
+      setTimeout(() => unsubscribe(), 30000) // 30 segundos
+    } catch (redirectError) {
+      console.log("Redirect falhou, tentando popup...", redirectError)
+      
+      // Se redirect falhar, tenta com popup (alguns navegadores mobile permitem)
+      try {
+        const result = await signInWithPopup(auth, googleProvider)
+        setUserId(result.user.uid)
+      } catch (popupError) {
+        console.error("Popup também falhou:", popupError)
+        throw popupError
+      }
+    }
+  }
+
   // Adicione este useEffect para lidar com o resultado do redirect
   useEffect(() => {
-    const handleRedirectResult = async () => {
+    const handleAuthRedirect = async () => {
       try {
         const result = await getRedirectResult(auth)
         if (result?.user) {
           setUserId(result.user.uid)
         }
       } catch (error) {
-        console.error("Erro ao processar redirect: ", error)
+        console.error("Erro no redirect result:", error)
       }
     }
-    
-    handleRedirectResult()
+  
+    handleAuthRedirect()
   }, [setUserId])
 
   // Função para fazer login do usuário
