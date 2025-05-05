@@ -20,5 +20,9 @@ export const auth = getAuth(app)
 export const db = getFirestore(app)
 auth.useDeviceLanguage()
 
-// Fazendo login pela conta Google
-export const googleProvider = new GoogleAuthProvider()
+const googleProvider = new GoogleAuthProvider()
+googleProvider.setCustomParameters({
+  prompt: 'select_account' // Força a seleção de conta sempre
+})
+
+export { googleProvider }
