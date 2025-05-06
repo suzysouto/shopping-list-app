@@ -2,7 +2,7 @@ import { css } from "@emotion/react"
 import styled from "@emotion/styled"
 
 export const Container = styled.div`
-  max-width: 37.5rem; /* 600px */
+  max-width: 43.5rem;
   margin: 1.5rem auto;
   padding: 1.5rem;
   background-color: var(--background-color);
@@ -125,21 +125,69 @@ export const QuantityInput = styled.input`
   }
 `
 
-export const DeleteButton = styled.button`
-  padding: 0.5rem 1rem;
-  background-color: #e63946;
-  color: #ffffff;
+export const EditButton = styled.button`
+  padding: 8px;
+  background-color: #f0ad4e;
+  color: white;
   border: none;
-  border-radius: 0.25rem;
+  border-radius: 4px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: #d62828;
+    background-color: #ec971f;
   }
 
-  @media (max-width: 600px) {
-    width: 100%;
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`
+
+export const HistoryButton = styled.button`
+  padding: 8px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s;
+
+  &:hover {
+    background-color: var(--secondary-color);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`
+
+export const DeleteButton = styled.button`
+  padding: 8px;
+  background-color: #d9534f;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s;
+
+  &:hover {
+    background-color: #c9302c;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 `
 
@@ -296,7 +344,7 @@ export const ModalOverlay = styled.div`
 `
 
 export const ModalContent = styled.div`
-  background: white;
+  background: #ccc;
   padding: 20px;
   border-radius: 10px;
   width: 400px;
@@ -317,19 +365,58 @@ export const GlobalStyles = css`
   }
 
   .ModalContent {
-    background: white;
-    color: #000;
+    background: #333;
+    color: #0070f3;
     padding: 20px;
     border-radius: 10px;
     width: 400px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+
+    h2 {
+      font-size: 1.3rem;
+      margin-bottom: 1.3rem;
+    }
+
+    ul {
+      list-style: none;
+      color: #ccc;
+      
+      li {
+        font-size: 1rem;
+        margin-bottom: 0.3rem;
+      }
+    }
+
+    button {
+      background-color: var(--primary-color);
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      margin-top: 1rem;
+      cursor: pointer;
+
+      :hover {
+        background-color: var(--secondary-color);
+      }
+    }
   }
 `
 
-export const HistoryButton = styled.div`
+/* export const HistoryButton = styled.div`
   width: 100%;
   padding: 0 1rem;
-`
+
+  button {
+    background-color: var(--primary-color);
+    border: none;
+    padding: 0.3rem 0.7rem;
+    border-radius: 0.5rem;
+
+    :hover {
+      background-color: var(--secondary-color);
+    }
+  }
+` */
 
 export const InnerHeader = styled.div`
   display: flex;
