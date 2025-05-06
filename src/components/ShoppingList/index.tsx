@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import Modal from 'react-modal'
+import { FaTrash, FaEdit, FaHistory } from 'react-icons/fa'
 import { ShoppingListTypes } from './types'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
@@ -36,6 +37,7 @@ import {
   ReportButton,
   SectionWrapper,
   SectionTitle,
+  EditButton,
 } from './styles'
 import { auth } from '../../firebaseConfig'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
@@ -54,6 +56,7 @@ const ShoppingListSection = ({
   onUpdatePrice,
   onRemoveItem,
   onShowHistory,
+  onEditItem,
   isCompletedList = false,
 }: {
   title: string
@@ -63,6 +66,7 @@ const ShoppingListSection = ({
   onUpdatePrice: (index: number, price: number) => void
   onRemoveItem: (index: number) => void
   onShowHistory: (index: number) => void
+  onEditItem: (index: number) => void
   isCompletedList?: boolean
 }) => {
   if (items.length === 0) return null
@@ -104,14 +108,19 @@ const ShoppingListSection = ({
                   }}
                   onBlur={() => onUpdatePrice(index, item.price)}
                 />
-                <DeleteButton onClick={() => onRemoveItem(index)}>
-                  Excluir
-                </DeleteButton>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <EditButton onClick={() => onEditItem(index)}>
+                    <FaEdit size={14} />
+                  </EditButton>
+                  <HistoryButton onClick={() => onShowHistory(index)}>
+                    <FaHistory size={14} />
+                  </HistoryButton>
+                  <DeleteButton onClick={() => onRemoveItem(index)}>
+                    <FaTrash size={14} />
+                  </DeleteButton>
+                </div>
               </SpecItemsWrapper>
             </ItemWrapper>
-            <HistoryButton>
-              <button onClick={() => onShowHistory(index)}>+ Histórico</button>
-            </HistoryButton>
           </ItemContainer>
         ))}
       </ItemList>
@@ -132,6 +141,7 @@ export const ShoppingList = () => {
   const [modalIsOpen, setModalIsOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(10)
+  const [editingIndex, setEditingIndex] = useState<number | null>(null)
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -164,7 +174,7 @@ export const ShoppingList = () => {
   
       if (isDuplicate) {
         toast.error("Este produto já está na lista!") // Exibe mensagem de erro
-        return // Impede a adição do item duplicado
+        return
       }
   
       // Se não for duplicado, adiciona o novo item
@@ -284,10 +294,6 @@ export const ShoppingList = () => {
 
   const sortedItems = sortItemsAlphabetically(items) // Ordena a lista alfabeticamente
 
-  /* const filteredItems = sortedItems.filter(item =>
-    item.name.toLowerCase().includes(searchTerm.toLowerCase())
-  ) */
-
   // Corrigindo a busca para considerar itens pendentes e concluídos
   const filteredItems = sortedItems.filter(item =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -348,30 +354,55 @@ export const ShoppingList = () => {
         didDrawCell: (data) => {
             finalY = data.table.finalY ?? finalY
         },
-    });
+    })
 
     // Adiciona o total abaixo da tabela com uma distância ajustada
     doc.setFont("helvetica", "bold")
     doc.setFontSize(14)
-    const totalY = finalY + 250;  // Distância entre a tabela e o total
+    const totalY = finalY + 250  // Distância entre a tabela e o total
     doc.text(`Total Geral: R$ ${total.toFixed(2)}`, 10, totalY)
 
     doc.save("relatorio_compras.pdf")
   } 
-  
-  // Paginação: calcula os itens visíveis
-  /* const indexOfLastItem = currentPage * itemsPerPage */
-  /* const indexOfFirstItem = indexOfLastItem - itemsPerPage */
-  /* const currentItems = filteredItems.slice(indexOfFirstItem, indexOfLastItem) */
 
   // Funções de navegação
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber)
   const nextPage = () => setCurrentPage((prev) => Math.min(prev + 1, Math.ceil(filteredItems.length / itemsPerPage)))
   const prevPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1))
 
-  /* const findOriginalIndex = (itemName: string) => {
-    return items.findIndex((item) => item.name === itemName)
-  } */
+  const handleEditItem = (index: number) => {
+    setEditingIndex(index)
+    const item = items[index]
+    setNewItemName(item.name)
+    setNewItemQuantity(item.quantity)
+    setNewItemPrice(item.price)
+    toast.info("Editando item...")
+  }
+  
+  const handleSaveEdit = () => {
+    if (editingIndex !== null) {
+      const updatedItems = [...items]
+      updatedItems[editingIndex] = {
+        ...updatedItems[editingIndex],
+        name: newItemName,
+        quantity: newItemQuantity,
+        price: newItemPrice
+      }
+      setItems(updatedItems)
+      setEditingIndex(null)
+      setNewItemName("")
+      setNewItemQuantity(0)
+      setNewItemPrice(0)
+      toast.success("Item atualizado com sucesso!")
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setEditingIndex(null)
+    setNewItemName("")
+    setNewItemQuantity(0)
+    setNewItemPrice(0)
+  }
 
   return (
     <ThemeProvider>
@@ -466,8 +497,15 @@ export const ShoppingList = () => {
                 onChange={(e) => setNewItemName(e.target.value)}
                 onKeyDown={handleKeyDown}
               />
-              <button type="button" onClick={addItem}>Adicionar</button>
-              <button type="button" onClick={handleSaveList}>Salvar Lista</button>
+                {editingIndex !== null ? (
+                  <button type="button" onClick={handleSaveEdit}>Salvar Edição</button>
+                ) : (
+                  <button type="button" onClick={addItem}>Adicionar</button>
+                )}
+                {editingIndex !== null && (
+                  <button type="button" onClick={handleCancelEdit}>Cancelar</button>
+                )}
+                <button type="button" onClick={handleSaveList}>Salvar Lista</button>
             </Form>
 
             <SearchContainer onSubmit={(e) => e.preventDefault()}>
@@ -523,6 +561,13 @@ export const ShoppingList = () => {
               handleShowHistory(originalIndex)
             }
           }}
+          onEditItem={(index) => {
+            const item = currentPendingItems[index];
+            const originalIndex = items.findIndex(i => i.name === item.name);
+            if (originalIndex !== -1) {
+              handleEditItem(originalIndex);
+            }
+          }}
         />
 
         {/* Lista de itens concluídos - usando completedItems */}
@@ -562,6 +607,13 @@ export const ShoppingList = () => {
             const originalIndex = items.findIndex(i => i.name === item.name)
             if (originalIndex !== -1) {
               handleShowHistory(originalIndex)
+            }
+          }}
+          onEditItem={(index) => {
+            const item = currentPendingItems[index];
+            const originalIndex = items.findIndex(i => i.name === item.name);
+            if (originalIndex !== -1) {
+              handleEditItem(originalIndex);
             }
           }}
           isCompletedList={true}
