@@ -402,22 +402,6 @@ export const GlobalStyles = css`
   }
 `
 
-/* export const HistoryButton = styled.div`
-  width: 100%;
-  padding: 0 1rem;
-
-  button {
-    background-color: var(--primary-color);
-    border: none;
-    padding: 0.3rem 0.7rem;
-    border-radius: 0.5rem;
-
-    :hover {
-      background-color: var(--secondary-color);
-    }
-  }
-` */
-
 export const InnerHeader = styled.div`
   display: flex;
   justify-content: flex-end;
