@@ -8,6 +8,11 @@
   --button-hover-background-color: #45a049;
   --primary-color: #007bff; /* Azul */
   --secondary-color: #0056b3; /* Azul mais escuro */
+  --edit-color: #f0ad4e;
+  --edit-color-hover: #ec971f;
+  --history-color: #2196F3;
+  --delete-color: #d9534f;
+  --delete-color-hover: #c9302c;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -22,6 +27,11 @@
     --primary-color: #007bff; /* Azul */
     --secondary-color: #0056b3; /* Azul mais escuro */
     --completed-item-bg: #1a2a1a;
+    --edit-color: #f0ad4e;
+    --edit-color-hover: #ec971f;
+    --history-color: #2196F3;
+    --delete-color: #d9534f;
+    --delete-color-hover: #c9302c;
   }
 }
 
