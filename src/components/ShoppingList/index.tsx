@@ -123,7 +123,13 @@ export const ShoppingList = () => {
       )
   
       if (isDuplicate) {
-        toast.error("Este produto já está na lista!") // Exibe mensagem de erro
+        setTimeout(() => {
+          toast.error("Este produto já está na lista!", {
+            autoClose: 3000,
+            closeOnClick: true,
+            closeButton: false,
+          })
+        }, 10) // Exibe mensagem de erro
         return
       }
   
@@ -142,7 +148,13 @@ export const ShoppingList = () => {
       setNewItemName("")
       setNewItemQuantity(0)
       setNewItemPrice(0)
-      toast.success("Produto adicionado com sucesso!") // Feedback de sucesso
+        setTimeout(() => {
+          toast.success("Produto adicionado com sucesso!", {
+            autoClose: 3000,
+            closeOnClick: true,
+            closeButton: false,
+          })
+        }, 10) // Feedback de sucesso
     }
   }
 
@@ -213,10 +225,22 @@ export const ShoppingList = () => {
     if (userId) {
       try {
         await saveList(userId, items, supermarketName)
-        toast.success("Lista salva com sucesso!")
+        setTimeout(() => {
+          toast.success("Lista salva com sucesso!", {
+            autoClose: 3000,
+            closeOnClick: true,
+            closeButton: false,
+          })
+        }, 10)
       } catch (error) {
         console.error("Erro ao salvar a lista: ", error)
-        toast.error("Erro ao salvar a lista.")
+        setTimeout(() => {
+          toast.error("Erro ao salvar a lista!", {
+            autoClose: 3000,
+            closeOnClick: true,
+            closeButton: false,
+          })
+        }, 10)
       }
     }
   }
@@ -326,7 +350,15 @@ export const ShoppingList = () => {
     setNewItemName(item.name)
     setNewItemQuantity(item.quantity)
     setNewItemPrice(item.price)
-    toast.info("Editando item...")
+
+    // Aguardar pequeno tempo antes de exibir o toast
+    setTimeout(() => {
+      toast.info("Editando item...", {
+        autoClose: 3000,
+        closeOnClick: true,
+        closeButton: false,
+      })
+    }, 10)
   }
   
   const handleSaveEdit = () => {
@@ -343,7 +375,13 @@ export const ShoppingList = () => {
       setNewItemName("")
       setNewItemQuantity(0)
       setNewItemPrice(0)
-      toast.success("Item atualizado com sucesso!")
+      setTimeout(() => {
+        toast.success("Item atualizado com sucesso!", {
+          autoClose: 3000,
+          closeOnClick: true,
+          closeButton: false,
+        })
+      }, 10)
     }
   }
 
@@ -462,6 +500,18 @@ export const ShoppingList = () => {
           }}
         />
 
+        {/* Controles de paginação - agora baseado em pendingItems */}
+        {pendingItems.length > itemsPerPage && (
+          <Pagination
+            currentPage={currentPage}
+            totalItems={pendingItems.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={paginate}
+            onPrevPage={prevPage}
+            onNextPage={nextPage}
+          />
+        )}
+
         {/* Lista de itens concluídos - usando completedItems */}
         <ShoppingListSection
           title="Itens Concluídos"
@@ -509,22 +559,9 @@ export const ShoppingList = () => {
             }
           }}
           isCompletedList={true}
-        />
-
-        {/* Controles de paginação - agora baseado em pendingItems */}
-        {pendingItems.length > itemsPerPage && (
-          <Pagination
-            currentPage={currentPage}
-            totalItems={pendingItems.length}
-            itemsPerPage={itemsPerPage}
-            onPageChange={paginate}
-            onPrevPage={prevPage}
-            onNextPage={nextPage}
-          />
-        )}
-      
-      {userId && <TotalPrice>Total: R$ {total.toFixed(2)}</TotalPrice>}
-      <ToastContainer />
+        />      
+        {userId && <TotalPrice>Total: R$ {total.toFixed(2)}</TotalPrice>}
+        <ToastContainer />
       </Container>
     </ThemeProvider>    
   )

@@ -3,7 +3,8 @@ import styled from "@emotion/styled"
 import { ItemContainer } from "./ItemRow/styles"
 
 export const Container = styled.div`
-  max-width: 43.5rem;
+  width: 100%;
+  max-width: 50%;
   margin: 1.5rem auto;
   padding: 1.5rem;
   background-color: var(--background-color);
@@ -11,6 +12,10 @@ export const Container = styled.div`
   border: 1px solid var(--text-color);
   border-radius: 0.5rem;
   box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.2);
+
+  @media (max-width: 600px) {
+    max-width: 100%;
+  }
 `
 
 export const ItemList = styled.ul`

@@ -1,5 +1,7 @@
 import styled from '@emotion/styled'
 
+const small = '600px'
+
 export const ItemContainer = styled.div`
   background-color: #333;
   border: 1px solid #ccc;
@@ -17,6 +19,12 @@ export const ItemWrapper = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
+
+  @media(max-width: ${small}) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
 `
 
 export const CheckboxContainer = styled.div`
