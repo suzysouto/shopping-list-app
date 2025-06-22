@@ -1,9 +1,9 @@
 import { LoginRegisterTypes } from './types'
 import { Container, Form, Button, GoogleButton } from './styles'
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react'
 import { auth, googleProvider } from '../../firebaseConfig'
-import { 
-  signInWithEmailAndPassword, 
+import {
+  signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPopup,
   getRedirectResult,
@@ -19,7 +19,7 @@ export const LoginRegister = ({ setUserId }: LoginRegisterTypes) => {
   const [isRegistering, setIsRegistering] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
-  // Configuração inicial
+  // Monitorar auth state
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) setUserId(user.uid)
@@ -27,20 +27,42 @@ export const LoginRegister = ({ setUserId }: LoginRegisterTypes) => {
     return () => unsubscribe()
   }, [setUserId])
 
-  // Função universal para login com Google
+  // Google Login
   const handleGoogleLogin = async () => {
     setIsLoading(true)
     try {
-      const result = await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider)
       setUserId(result.user.uid)
-      toast.success("Login realizado com sucesso!")
+      setTimeout(() => {
+        toast.success("Login com Google realizado com sucesso!", {
+          autoClose: 3000,
+          closeOnClick: true,
+          closeButton: false,
+        })
+      }, 10)
     } catch (error) {
-      console.error("Erro:", error)
-      toast.error("Falha no login com Google")
-      
-      // Fallback para mobile
+      if (error instanceof Error) {
+        console.error("Erro:", error.message)
+        setTimeout(() => {
+          toast.error("Falha no login com Google: " + error.message, {
+            autoClose: 3000,
+            closeOnClick: true,
+            closeButton: false,
+          })
+        }, 10)
+      } else {
+        console.error("Erro desconhecido:", error)
+        toast.error("Falha no login com Google: Erro desconhecido")
+      }
+
       if (typeof window !== 'undefined' && /Android|iPhone|iPad/i.test(navigator.userAgent)) {
-        toast.info("Redirecionando para login...")
+        setTimeout(() => {
+          toast.info("Redirecionando para login...", {
+            autoClose: 3000,
+            closeOnClick: true,
+            closeButton: false,
+          })
+        }, 10)
         window.location.assign(
           `https://${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}.firebaseapp.com/__/auth/handler`
         )
@@ -50,7 +72,7 @@ export const LoginRegister = ({ setUserId }: LoginRegisterTypes) => {
     }
   }
 
-  // Adicione este useEffect para lidar com o resultado do redirect
+  // Redirect Google
   useEffect(() => {
     const handleAuthRedirect = async () => {
       try {
@@ -59,35 +81,112 @@ export const LoginRegister = ({ setUserId }: LoginRegisterTypes) => {
           setUserId(result.user.uid)
         }
       } catch (error) {
-        console.error("Erro no redirect result:", error)
+        if (error instanceof Error) {
+          console.error("Erro no redirect result:", error.message)
+        } else {
+          console.error("Erro desconhecido no redirect result:", error)
+        }
       }
     }
-  
     handleAuthRedirect()
   }, [setUserId])
 
-  // Função para fazer login do usuário
+  // Login com email/senha
   const handleLogin = async () => {
     setIsLoading(true)
     try {
+      if (!email || !password) {
+        setTimeout(() => {
+          toast.error("Email e senha são obrigatórios!", {
+            autoClose: 3000,
+            closeOnClick: true,
+            closeButton: false,
+          })
+        }, 10)
+        setIsLoading(false)
+        return
+      }
+
       const userCredential = await signInWithEmailAndPassword(auth, email, password)
       setUserId(userCredential.user.uid)
+      setTimeout(() => {
+        toast.success("Login realizado com sucesso!", {
+          autoClose: 3000,
+          closeOnClick: true,
+          closeButton: false,
+        })
+      }, 10)
     } catch (error) {
-      console.error("Erro ao fazer login: ", error)
+      if (error instanceof Error) {
+        console.error("Erro ao fazer login:", error.message)
+        setTimeout(() => {
+          toast.error("Erro: " + error.message, {
+            autoClose: 3000,
+            closeOnClick: true,
+            closeButton: false,
+          })
+        }, 10)
+      } else {
+        console.error("Erro desconhecido ao fazer login:", error)
+        toast.error("Erro desconhecido")
+      }
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Função para registrar o usuário
+  // Registro de usuário
   const handleRegister = async () => {
     setIsLoading(true)
     try {
+      if (!email || !password) {
+        setTimeout(() => {
+          toast.error("Email e senha são obrigatórios!", {
+            autoClose: 3000,
+            closeOnClick: true,
+            closeButton: false,
+          })
+        }, 10)
+        setIsLoading(false)
+        return
+      }
+
+      if (password.length < 6) {
+        setTimeout(() => {
+          toast.error("A senha deve ter pelo menos 6 caracteres.", {
+            autoClose: 3000,
+            closeOnClick: true,
+            closeButton: false,
+          })
+        }, 10)
+        setIsLoading(false)
+        return
+      }
+
       const userCredential = await createUserWithEmailAndPassword(auth, email, password)
       setUserId(userCredential.user.uid)
+      setTimeout(() => {
+        toast.success("Conta criada com sucesso!", {
+          autoClose: 3000,
+          closeOnClick: true,
+          closeButton: false,
+        })
+      }, 10)
       setIsRegistering(false)
     } catch (error) {
-      console.error("Erro ao registrar: ", error)
+      if (error instanceof Error) {
+        console.error("Erro ao registrar:", error.message)
+        setTimeout(() => {
+          toast.error("Erro: " + error.message, {
+            autoClose: 3000,
+            closeOnClick: true,
+            closeButton: false,
+          })
+        }, 10)
+      } else {
+        console.error("Erro desconhecido ao registrar:", error)
+        toast.error("Erro desconhecido")
+      }
     } finally {
       setIsLoading(false)
     }
@@ -103,24 +202,23 @@ export const LoginRegister = ({ setUserId }: LoginRegisterTypes) => {
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            disabled={isLoading}
           />
           <input
             type="password"
             placeholder="Senha"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            disabled={isLoading}
           />
           <Button onClick={handleRegister} disabled={isLoading}>
             {isLoading ? 'Registrando...' : 'Registrar'}
           </Button>
-          <GoogleButton 
-            onClick={handleGoogleLogin} 
-            disabled={isLoading}
-          >
+          <GoogleButton onClick={handleGoogleLogin} disabled={isLoading}>
             <FcGoogle size={20} />
             {isLoading ? 'Carregando...' : 'Continuar com Google'}
           </GoogleButton>
-          <Button onClick={() => setIsRegistering(false)}>
+          <Button onClick={() => setIsRegistering(false)} disabled={isLoading}>
             Já tem uma conta? Entrar
           </Button>
         </Form>
@@ -132,24 +230,23 @@ export const LoginRegister = ({ setUserId }: LoginRegisterTypes) => {
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            disabled={isLoading}
           />
           <input
             type="password"
             placeholder="Senha"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            disabled={isLoading}
           />
           <Button onClick={handleLogin} disabled={isLoading}>
             {isLoading ? 'Entrando...' : 'Entrar'}
           </Button>
-          <GoogleButton 
-            onClick={handleGoogleLogin} 
-            disabled={isLoading}
-          >
+          <GoogleButton onClick={handleGoogleLogin} disabled={isLoading}>
             <FcGoogle size={20} />
             {isLoading ? 'Carregando...' : 'Continuar com Google'}
           </GoogleButton>
-          <Button onClick={() => setIsRegistering(true)}>
+          <Button onClick={() => setIsRegistering(true)} disabled={isLoading}>
             Criar conta
           </Button>
         </Form>

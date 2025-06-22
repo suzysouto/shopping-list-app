@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import Modal from 'react-modal'
-import { FaTrash, FaEdit, FaHistory } from 'react-icons/fa'
 import { ShoppingListTypes } from './types'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
@@ -8,43 +7,28 @@ import { ThemeProvider } from '@/contexts/ThemeContext'
 import { Global, css } from '@emotion/react'
 import {
   Container,
-  Form,
-  ItemContainer,
   ItemList,
-  PriceInput,
-  QuantityInput,
-  DeleteButton,
   TotalPrice,
-  CheckboxContainer,
-  Checkbox,
-  DoneItem,
-  PendingItem,
-  SpecItemsWrapper,
   ExitButton,
   Header,
   Title,
   SearchContainer,
-  SupermarketField,
-  SupermarketLabel,
-  SupermarketInput,
-  RadioButtonContainer,
-  RadioButtonLabel,
-  ItemWrapper,
-  HistoryButton,
   InnerHeader,
-  PaginationWrapper,
-  ButtonNumbers,
   ReportButton,
   SectionWrapper,
   SectionTitle,
-  EditButton,
 } from './styles'
 import { auth } from '../../firebaseConfig'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 import { saveList, getList } from '@/services/ListService'
 import { LoginRegister } from '../LoginRegister'
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
+import { Pagination } from './Pagination'
+import { PriceHistoryModal } from './PriceHistoryModal'
+import { SupermarketForm } from './SupermarketForm'
+import { ItemInputForm } from './ItemInputForm'
+import { ItemRow } from './ItemRow'
 
 Modal.setAppElement('body')
 
@@ -76,52 +60,18 @@ const ShoppingListSection = ({
       <SectionTitle>{title}</SectionTitle>
       <ItemList>
         {items.map((item, index) => (
-          <ItemContainer key={index} className={isCompletedList ? 'completed' : ''}>
-            <ItemWrapper>
-              <CheckboxContainer>
-                <Checkbox
-                  type="checkbox"
-                  checked={item.done}
-                  onChange={() => onToggleDone(index)}
-                />
-                {item.done ? (
-                  <DoneItem>{item.name}</DoneItem>
-                ) : (
-                  <PendingItem>{item.name}</PendingItem>
-                )}
-              </CheckboxContainer>
-              <SpecItemsWrapper>
-                <QuantityInput
-                  type="number"
-                  placeholder="Qtd"
-                  value={item.quantity > 0 ? item.quantity : ""}
-                  onChange={(e) => onUpdateQuantity(index, parseInt(e.target.value) || 0)}
-                />
-                <PriceInput
-                  type="number"
-                  placeholder="Preço"
-                  step="0.01"
-                  value={item.price > 0 ? item.price : ""}
-                  onChange={(e) => {
-                    const inputValue = e.target.valueAsNumber || 0;
-                    onUpdatePrice(index, inputValue);
-                  }}
-                  onBlur={() => onUpdatePrice(index, item.price)}
-                />
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <EditButton onClick={() => onEditItem(index)}>
-                    <FaEdit size={14} />
-                  </EditButton>
-                  <HistoryButton onClick={() => onShowHistory(index)}>
-                    <FaHistory size={14} />
-                  </HistoryButton>
-                  <DeleteButton onClick={() => onRemoveItem(index)}>
-                    <FaTrash size={14} />
-                  </DeleteButton>
-                </div>
-              </SpecItemsWrapper>
-            </ItemWrapper>
-          </ItemContainer>
+          <ItemRow
+            key={index}
+            item={item}
+            index={index}
+            isCompleted={isCompletedList}
+            onToggleDone={onToggleDone}
+            onUpdateQuantity={onUpdateQuantity}
+            onUpdatePrice={onUpdatePrice}
+            onEdit={onEditItem}
+            onShowHistory={onShowHistory}
+            onRemove={onRemoveItem}
+          />
         ))}
       </ItemList>
     </SectionWrapper>
@@ -173,7 +123,13 @@ export const ShoppingList = () => {
       )
   
       if (isDuplicate) {
-        toast.error("Este produto já está na lista!") // Exibe mensagem de erro
+        setTimeout(() => {
+          toast.error("Este produto já está na lista!", {
+            autoClose: 3000,
+            closeOnClick: true,
+            closeButton: false,
+          })
+        }, 10) // Exibe mensagem de erro
         return
       }
   
@@ -192,7 +148,13 @@ export const ShoppingList = () => {
       setNewItemName("")
       setNewItemQuantity(0)
       setNewItemPrice(0)
-      toast.success("Produto adicionado com sucesso!") // Feedback de sucesso
+        setTimeout(() => {
+          toast.success("Produto adicionado com sucesso!", {
+            autoClose: 3000,
+            closeOnClick: true,
+            closeButton: false,
+          })
+        }, 10) // Feedback de sucesso
     }
   }
 
@@ -263,10 +225,22 @@ export const ShoppingList = () => {
     if (userId) {
       try {
         await saveList(userId, items, supermarketName)
-        toast.success("Lista salva com sucesso!")
+        setTimeout(() => {
+          toast.success("Lista salva com sucesso!", {
+            autoClose: 3000,
+            closeOnClick: true,
+            closeButton: false,
+          })
+        }, 10)
       } catch (error) {
         console.error("Erro ao salvar a lista: ", error)
-        toast.error("Erro ao salvar a lista.")
+        setTimeout(() => {
+          toast.error("Erro ao salvar a lista!", {
+            autoClose: 3000,
+            closeOnClick: true,
+            closeButton: false,
+          })
+        }, 10)
       }
     }
   }
@@ -376,7 +350,15 @@ export const ShoppingList = () => {
     setNewItemName(item.name)
     setNewItemQuantity(item.quantity)
     setNewItemPrice(item.price)
-    toast.info("Editando item...")
+
+    // Aguardar pequeno tempo antes de exibir o toast
+    setTimeout(() => {
+      toast.info("Editando item...", {
+        autoClose: 3000,
+        closeOnClick: true,
+        closeButton: false,
+      })
+    }, 10)
   }
   
   const handleSaveEdit = () => {
@@ -393,7 +375,13 @@ export const ShoppingList = () => {
       setNewItemName("")
       setNewItemQuantity(0)
       setNewItemPrice(0)
-      toast.success("Item atualizado com sucesso!")
+      setTimeout(() => {
+        toast.success("Item atualizado com sucesso!", {
+          autoClose: 3000,
+          closeOnClick: true,
+          closeButton: false,
+        })
+      }, 10)
     }
   }
 
@@ -429,85 +417,27 @@ export const ShoppingList = () => {
             <ReportButton>
               <button onClick={handleDownloadPDF}>Baixar Relatório em PDF</button>
             </ReportButton>
-            <Modal
+            <PriceHistoryModal
               isOpen={modalIsOpen}
-              onRequestClose={handleCloseModal}
-              contentLabel='Histórico de Preços'
-              overlayClassName="ModalOverlay"
-              className="ModalContent"
-            >
-              <h2>Histórico de Preços</h2>
-              <ul>
-                {currentHistory.map((entry, idx) => (
-                  <li key={idx}>
-                    {entry.price !== undefined ? (
-                      <>
-                        Preço: R$ {entry.price.toFixed(2)} - Data: {entry.date}
-                      </>
-                    ) : (
-                      "Preço indisponível"
-                    )}
-                  </li>
-                ))}
-              </ul>
-              <button onClick={handleCloseModal}>Fechar</button>
-            </Modal>
-
-            Deseja informar o supermercado?
-            <RadioButtonContainer>
-              <RadioButtonLabel>
-                <input 
-                  type='radio'
-                  name='supermarketOption'
-                  value='yes'
-                  checked={isSupermarketOptional === true}
-                  onChange={() => setIsSupermarketOptional(true)}
-                />
-                Sim
-              </RadioButtonLabel>
-              <RadioButtonLabel>
-                <input 
-                  type='radio'
-                  name='supermarketOption'
-                  value='no'
-                  checked={isSupermarketOptional === false}
-                  onChange={() => setIsSupermarketOptional(false)}
-                />
-                Não
-              </RadioButtonLabel>
-            </RadioButtonContainer>
-            {isSupermarketOptional && (
-              <SupermarketField>
-                <SupermarketLabel>
-                  Nome do supermercado
-                </SupermarketLabel>
-                <SupermarketInput
-                  type='text'
-                  placeholder='Informe o nome do supermercado'
-                  value={supermarketName}
-                  onChange={(e) => setSupermarketName(e.target.value)}
-                />
-              </SupermarketField>
-            )}
-            <Form>
-              <input
-                type="text"
-                placeholder="Nome do produto"
-                value={newItemName}
-                onChange={(e) => setNewItemName(e.target.value)}
-                onKeyDown={handleKeyDown}
-              />
-                {editingIndex !== null ? (
-                  <button type="button" onClick={handleSaveEdit}>Salvar Edição</button>
-                ) : (
-                  <button type="button" onClick={addItem}>Adicionar</button>
-                )}
-                {editingIndex !== null && (
-                  <button type="button" onClick={handleCancelEdit}>Cancelar</button>
-                )}
-                <button type="button" onClick={handleSaveList}>Salvar Lista</button>
-            </Form>
-
+              onClose={handleCloseModal}
+              history={currentHistory}
+            />
+            <SupermarketForm
+              isOptional={isSupermarketOptional}
+              supermarketName={supermarketName}
+              onSupermarketChange={setSupermarketName}
+              onOptionChange={setIsSupermarketOptional}
+            />
+            <ItemInputForm
+              itemName={newItemName}
+              onItemNameChange={setNewItemName}
+              onAddItem={addItem}
+              onSaveList={handleSaveList}
+              isEditing={editingIndex !== null}
+              onSaveEdit={handleSaveEdit}
+              onCancelEdit={handleCancelEdit}
+              onKeyDown={handleKeyDown}
+            />
             <SearchContainer onSubmit={(e) => e.preventDefault()}>
               <input
                 type="text"
@@ -570,6 +500,18 @@ export const ShoppingList = () => {
           }}
         />
 
+        {/* Controles de paginação - agora baseado em pendingItems */}
+        {pendingItems.length > itemsPerPage && (
+          <Pagination
+            currentPage={currentPage}
+            totalItems={pendingItems.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={paginate}
+            onPrevPage={prevPage}
+            onNextPage={nextPage}
+          />
+        )}
+
         {/* Lista de itens concluídos - usando completedItems */}
         <ShoppingListSection
           title="Itens Concluídos"
@@ -617,44 +559,9 @@ export const ShoppingList = () => {
             }
           }}
           isCompletedList={true}
-        />
-
-        {/* Controles de paginação - agora baseado em pendingItems */}
-        {pendingItems.length > itemsPerPage && (
-          <PaginationWrapper>
-            <ButtonNumbers 
-              onClick={() => {
-                prevPage()
-              }} 
-              disabled={currentPage === 1}
-            >
-              Anterior
-            </ButtonNumbers>
-            {Array.from({ length: Math.ceil(pendingItems.length / itemsPerPage) }, (_, i) => (
-              <ButtonNumbers 
-                key={i + 1}
-                onClick={() => paginate(i + 1)}
-                style={{
-                  backgroundColor: currentPage === i + 1 ? 'var(--foreground)' : 'var(--background-color)',
-                  color: currentPage === i + 1 ? 'var(--background-color)' : 'var(--text-color)',
-                }}
-              >
-                {i + 1}
-              </ButtonNumbers>
-            ))}
-            <ButtonNumbers 
-              onClick={() => {
-                nextPage()
-              }} 
-              disabled={currentPage === Math.ceil(pendingItems.length / itemsPerPage)}
-            >
-              Próximo
-            </ButtonNumbers>
-          </PaginationWrapper>
-        )}
-      
-      {userId && <TotalPrice>Total: R$ {total.toFixed(2)}</TotalPrice>}
-      <ToastContainer />
+        />      
+        {userId && <TotalPrice>Total: R$ {total.toFixed(2)}</TotalPrice>}
+        <ToastContainer />
       </Container>
     </ThemeProvider>    
   )

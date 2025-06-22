@@ -1,4 +1,4 @@
-import { initializeApp } from "firebase/app"
+import { initializeApp, getApps, getApp } from "firebase/app"
 import { getAuth, GoogleAuthProvider } from "firebase/auth"
 import { getFirestore } from "firebase/firestore"
 
@@ -12,17 +12,12 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 }
 
-// Inicializando o Firebase
-const app = initializeApp(firebaseConfig)
+// Proteção contra múltiplas inicializações
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp()
 
-// Inicializando o Auth e Firestore
+// Inicializando Auth e Firestore
 export const auth = getAuth(app)
 export const db = getFirestore(app)
-
-// Apenas para desenvolvimento (remova em produção)
-if (process.env.NODE_ENV === 'development') {
-  auth.settings.appVerificationDisabledForTesting = true
-}
 
 const googleProvider = new GoogleAuthProvider()
 googleProvider.setCustomParameters({ prompt: "select_account" })
