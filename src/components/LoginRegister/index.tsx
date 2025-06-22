@@ -2,8 +2,8 @@ import { LoginRegisterTypes } from './types'
 import { Container, Form, Button, GoogleButton } from './styles'
 import { useEffect, useState } from 'react'
 import { auth, googleProvider } from '../../firebaseConfig'
-import { 
-  signInWithEmailAndPassword, 
+import {
+  signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPopup,
   getRedirectResult,
@@ -40,17 +40,21 @@ export const LoginRegister = ({ setUserId }: LoginRegisterTypes) => {
           closeButton: false,
         })
       }, 10)
-    } catch (error: any) {
-      console.error("Erro:", error.code, error.message)
-      setTimeout(() => {
-        toast.error("Falha no login com Google" + error.message, {
-          autoClose: 3000,
-          closeOnClick: true,
-          closeButton: false,
-        })
-      }, 10)
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error("Erro:", error.message)
+        setTimeout(() => {
+          toast.error("Falha no login com Google: " + error.message, {
+            autoClose: 3000,
+            closeOnClick: true,
+            closeButton: false,
+          })
+        }, 10)
+      } else {
+        console.error("Erro desconhecido:", error)
+        toast.error("Falha no login com Google: Erro desconhecido")
+      }
 
-      // Fallback para mobile
       if (typeof window !== 'undefined' && /Android|iPhone|iPad/i.test(navigator.userAgent)) {
         setTimeout(() => {
           toast.info("Redirecionando para login...", {
@@ -76,8 +80,12 @@ export const LoginRegister = ({ setUserId }: LoginRegisterTypes) => {
         if (result?.user) {
           setUserId(result.user.uid)
         }
-      } catch (error: any) {
-        console.error("Erro no redirect result:", error.code, error.message)
+      } catch (error) {
+        if (error instanceof Error) {
+          console.error("Erro no redirect result:", error.message)
+        } else {
+          console.error("Erro desconhecido no redirect result:", error)
+        }
       }
     }
     handleAuthRedirect()
@@ -89,12 +97,12 @@ export const LoginRegister = ({ setUserId }: LoginRegisterTypes) => {
     try {
       if (!email || !password) {
         setTimeout(() => {
-        toast.error("Email e senha são obrigatórios!", {
-          autoClose: 3000,
-          closeOnClick: true,
-          closeButton: false,
-        })
-      }, 10)
+          toast.error("Email e senha são obrigatórios!", {
+            autoClose: 3000,
+            closeOnClick: true,
+            closeButton: false,
+          })
+        }, 10)
         setIsLoading(false)
         return
       }
@@ -108,15 +116,20 @@ export const LoginRegister = ({ setUserId }: LoginRegisterTypes) => {
           closeButton: false,
         })
       }, 10)
-    } catch (error: any) {
-      console.error("Erro ao fazer login:", error.code, error.message)
-      setTimeout(() => {
-        toast.error("Erro: " + error.message, {
-          autoClose: 3000,
-          closeOnClick: true,
-          closeButton: false,
-        })
-      }, 10)
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error("Erro ao fazer login:", error.message)
+        setTimeout(() => {
+          toast.error("Erro: " + error.message, {
+            autoClose: 3000,
+            closeOnClick: true,
+            closeButton: false,
+          })
+        }, 10)
+      } else {
+        console.error("Erro desconhecido ao fazer login:", error)
+        toast.error("Erro desconhecido")
+      }
     } finally {
       setIsLoading(false)
     }
@@ -128,24 +141,24 @@ export const LoginRegister = ({ setUserId }: LoginRegisterTypes) => {
     try {
       if (!email || !password) {
         setTimeout(() => {
-        toast.error("Email e senha são obrigatórios!", {
-          autoClose: 3000,
-          closeOnClick: true,
-          closeButton: false,
-        })
-      }, 10)
+          toast.error("Email e senha são obrigatórios!", {
+            autoClose: 3000,
+            closeOnClick: true,
+            closeButton: false,
+          })
+        }, 10)
         setIsLoading(false)
         return
       }
 
       if (password.length < 6) {
         setTimeout(() => {
-        toast.error("A senha deve ter pelo menos 6 caracteres.", {
-          autoClose: 3000,
-          closeOnClick: true,
-          closeButton: false,
-        })
-      }, 10)
+          toast.error("A senha deve ter pelo menos 6 caracteres.", {
+            autoClose: 3000,
+            closeOnClick: true,
+            closeButton: false,
+          })
+        }, 10)
         setIsLoading(false)
         return
       }
@@ -160,15 +173,20 @@ export const LoginRegister = ({ setUserId }: LoginRegisterTypes) => {
         })
       }, 10)
       setIsRegistering(false)
-    } catch (error: any) {
-      console.error("Erro ao registrar:", error.code, error.message)
-      setTimeout(() => {
-        toast.error("Erro: " + error.message, {
-          autoClose: 3000,
-          closeOnClick: true,
-          closeButton: false,
-        })
-      }, 10)
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error("Erro ao registrar:", error.message)
+        setTimeout(() => {
+          toast.error("Erro: " + error.message, {
+            autoClose: 3000,
+            closeOnClick: true,
+            closeButton: false,
+          })
+        }, 10)
+      } else {
+        console.error("Erro desconhecido ao registrar:", error)
+        toast.error("Erro desconhecido")
+      }
     } finally {
       setIsLoading(false)
     }
@@ -196,10 +214,7 @@ export const LoginRegister = ({ setUserId }: LoginRegisterTypes) => {
           <Button onClick={handleRegister} disabled={isLoading}>
             {isLoading ? 'Registrando...' : 'Registrar'}
           </Button>
-          <GoogleButton 
-            onClick={handleGoogleLogin} 
-            disabled={isLoading}
-          >
+          <GoogleButton onClick={handleGoogleLogin} disabled={isLoading}>
             <FcGoogle size={20} />
             {isLoading ? 'Carregando...' : 'Continuar com Google'}
           </GoogleButton>
@@ -227,10 +242,7 @@ export const LoginRegister = ({ setUserId }: LoginRegisterTypes) => {
           <Button onClick={handleLogin} disabled={isLoading}>
             {isLoading ? 'Entrando...' : 'Entrar'}
           </Button>
-          <GoogleButton 
-            onClick={handleGoogleLogin} 
-            disabled={isLoading}
-          >
+          <GoogleButton onClick={handleGoogleLogin} disabled={isLoading}>
             <FcGoogle size={20} />
             {isLoading ? 'Carregando...' : 'Continuar com Google'}
           </GoogleButton>
