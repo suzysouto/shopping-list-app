@@ -1,3 +1,4 @@
+// index.tsx
 import { useEffect, useState } from 'react'
 import Modal from 'react-modal'
 import { ShoppingListTypes } from './types'
@@ -17,6 +18,8 @@ import {
   ReportButton,
   SectionWrapper,
   SectionTitle,
+  ReportTotalDiv,
+  AddSupermarket,
 } from './styles'
 import { auth } from '../../firebaseConfig'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
@@ -25,13 +28,16 @@ import { LoginRegister } from '../LoginRegister'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { Pagination } from './Pagination'
-import { PriceHistoryModal } from './PriceHistoryModal'
 import { SupermarketForm } from './SupermarketForm'
 import { ItemInputForm } from './ItemInputForm'
 import { ItemRow } from './ItemRow'
+import SupermarketModal from './SupermarketModal'
+import { PriceHistoryModal } from './PriceHistoryModal'
+import { EditingItemModal } from './EditingItem'
 
 Modal.setAppElement('body')
 
+// Componente para exibir seções da lista
 const ShoppingListSection = ({
   title,
   items,
@@ -39,8 +45,8 @@ const ShoppingListSection = ({
   onUpdateQuantity,
   onUpdatePrice,
   onRemoveItem,
-  onShowHistory,
   onEditItem,
+  onShowHistory,
   isCompletedList = false,
 }: {
   title: string
@@ -49,8 +55,8 @@ const ShoppingListSection = ({
   onUpdateQuantity: (index: number, quantity: number) => void
   onUpdatePrice: (index: number, price: number) => void
   onRemoveItem: (index: number) => void
-  onShowHistory: (index: number) => void
   onEditItem: (index: number) => void
+  onShowHistory: (index: number) => void
   isCompletedList?: boolean
 }) => {
   if (items.length === 0) return null
@@ -79,6 +85,7 @@ const ShoppingListSection = ({
 }
 
 export const ShoppingList = () => {
+  // Estados principais
   const [items, setItems] = useState<ShoppingListTypes[]>([])
   const [newItemName, setNewItemName] = useState("")
   const [newItemQuantity, setNewItemQuantity] = useState<number>(0)
@@ -87,12 +94,16 @@ export const ShoppingList = () => {
   const [userId, setUserId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [isSupermarketOptional, setIsSupermarketOptional] = useState<boolean>(false)
-  const [currentHistory, setCurrentHistory] = useState<{ price: number; date: string }[]>([])
-  const [modalIsOpen, setModalIsOpen] = useState(false)
+  const [isSupermarketModalOpen, setSupermarketModalOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(10)
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
+  const [currentHistory, setCurrentHistory] = useState<{ price: number; date: string }[]>([])
+  const [modalIsOpen, setModalIsOpen] = useState(false) // Para o modal de histórico
+  const [editModalOpen, setEditModalOpen] = useState(false) // Para o modal de edição
+  const [editingItemName, setEditingItemName] = useState("")
 
+  // Autenticação e carregamento da lista
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
@@ -104,7 +115,7 @@ export const ShoppingList = () => {
         setSupermarketName('')
       }
     })
-    return unsubscribe;
+    return unsubscribe
   }, [])
 
   const loadUserList = async (uid: string) => {
@@ -115,133 +126,85 @@ export const ShoppingList = () => {
     }
   }
 
+  // Adicionar item
   const addItem = () => {
-    if (newItemName.trim()) {
-      // Verifica se o produto já existe na lista
-      const isDuplicate = items.some(
-        (item) => item.name.toLowerCase() === newItemName.toLowerCase()
-      )
-  
-      if (isDuplicate) {
-        setTimeout(() => {
-          toast.error("Este produto já está na lista!", {
-            autoClose: 3000,
-            closeOnClick: true,
-            closeButton: false,
-          })
-        }, 10) // Exibe mensagem de erro
-        return
-      }
-  
-      // Se não for duplicado, adiciona o novo item
-      const newItem: ShoppingListTypes = {
-        name: newItemName,
-        quantity: newItemQuantity,
-        price: newItemPrice,
-        done: false,
-        priceHistory: [],
-      }
+    if (!newItemName.trim()) return
 
-      const updatedItems = [...items, newItem]
-      const sortedItems = sortItemsAlphabetically(updatedItems) // Ordena a lista após adiconar
-      setItems(sortedItems)
-      setNewItemName("")
-      setNewItemQuantity(0)
-      setNewItemPrice(0)
-        setTimeout(() => {
-          toast.success("Produto adicionado com sucesso!", {
-            autoClose: 3000,
-            closeOnClick: true,
-            closeButton: false,
-          })
-        }, 10) // Feedback de sucesso
+    const isDuplicate = items.some(
+      (item) => item.name.toLowerCase() === newItemName.toLowerCase()
+    )
+    if (isDuplicate) {
+      setTimeout(() => toast.error("Este produto já está na lista!", { autoClose: 3000 }), 10)
+      return
     }
+
+    const newItem: ShoppingListTypes = {
+      name: newItemName,
+      quantity: newItemQuantity,
+      price: newItemPrice,
+      done: false,
+      priceHistory: [],
+    }
+
+    const updatedItems = sortItemsAlphabetically([...items, newItem])
+    setItems(updatedItems)
+    setNewItemName("")
+    setNewItemQuantity(0)
+    setNewItemPrice(0)
+
+    setTimeout(() => toast.success("Produto adicionado com sucesso!", { autoClose: 3000 }), 10)
   }
 
+  // Mostrar histórico de preços
   const handleShowHistory = (index: number) => {
     const item = items[index]
-  
     if (item && item.priceHistory) {
       setCurrentHistory(item.priceHistory)
       setModalIsOpen(true)
     }
-  }  
+  }
 
   const handleCloseModal = () => {
     setModalIsOpen(false)
     setCurrentHistory([])
   }
 
+  // Funções de atualização e remoção de itens
   const toggleDone = (index: number) => {
-    const updatedItems = items.map((item, i) =>
-      i === index ? { ...item, done: !item.done } : item
-    )
-    setItems(updatedItems)
+    setItems(prev => prev.map((item, i) => i === index ? { ...item, done: !item.done } : item))
   }
 
   const updatePrice = (index: number, newPrice: number) => {
-    setItems((prevItems) => {
-      const updatedItems = prevItems.map((item, i) => {
-        if (i === index) {
-          const previousPrice = item.price
-          const currentDate = new Date().toLocaleDateString('pt-BR') // Obtém a data atual formatada
-
-          // Certifica-se de que priceHistory é uma array válida
-          const priceHistory = item.priceHistory || []
-          
-          // Verifica se já existe um registro no histórico com a data de hoje
-          const lastEntry = item.priceHistory?.[item.priceHistory.length - 1]
-          const isSameDay = lastEntry && lastEntry.date === currentDate
-
-          const updatedPriceHistory = isSameDay
-            ? [...priceHistory] // Se for o mesmo dia, o histórico é mantido sem adição
-            : [...priceHistory, { price: previousPrice, date: currentDate }] //Adciona o novo registro
-  
-          return {
-            ...item,
-            price: newPrice,
-            priceHistory: updatedPriceHistory.slice(-5), // Mantém apenas os últimos 5 registros
-          }
-        }
-        return item;
+    setItems(prev =>
+      prev.map((item, i) => {
+        if (i !== index) return item
+        const previousPrice = item.price
+        const currentDate = new Date().toLocaleDateString('pt-BR')
+        const priceHistory = item.priceHistory || []
+        const lastEntry = priceHistory[priceHistory.length - 1]
+        const isSameDay = lastEntry && lastEntry.date === currentDate
+        const updatedPriceHistory = isSameDay
+          ? [...priceHistory]
+          : [...priceHistory, { price: previousPrice, date: currentDate }]
+        return { ...item, price: newPrice, priceHistory: updatedPriceHistory.slice(-5) }
       })
-  
-      return updatedItems
-    })
-  }   
-     
-  const updateQuantity = (index: number, quantity: number) => {
-    const updatedItems = items.map((item, i) =>
-      i === index ? { ...item, quantity } : item
     )
-    setItems(updatedItems)
   }
 
-  const removeItem = (index: number) => {
-    setItems((prevItems) => prevItems.filter((_, i) => i !== index))
+  const updateQuantity = (index: number, quantity: number) => {
+    setItems(prev => prev.map((item, i) => i === index ? { ...item, quantity } : item))
   }
+
+  const removeItem = (index: number) => setItems(prev => prev.filter((_, i) => i !== index))
 
   const handleSaveList = async () => {
-    if (userId) {
-      try {
-        await saveList(userId, items, supermarketName)
-        setTimeout(() => {
-          toast.success("Lista salva com sucesso!", {
-            autoClose: 3000,
-            closeOnClick: true,
-            closeButton: false,
-          })
-        }, 10)
-      } catch (error) {
-        console.error("Erro ao salvar a lista: ", error)
-        setTimeout(() => {
-          toast.error("Erro ao salvar a lista!", {
-            autoClose: 3000,
-            closeOnClick: true,
-            closeButton: false,
-          })
-        }, 10)
-      }
+    if (!userId) return
+    try {
+      await saveList(userId, items, supermarketName)
+      setTimeout(() => toast.success("Lista salva com sucesso!", { autoClose: 3000 }), 10)
+    } catch (error) {
+      console.error(error)
+      setTimeout(() => toast.error("Erro ao salvar a lista!", { autoClose: 3000 }), 10)
     }
   }
 
@@ -251,138 +214,111 @@ export const ShoppingList = () => {
       setUserId(null)
       setItems([])
       setSupermarketName('')
-    } catch (error) {
-      console.error("Erro ao fazer logout: ", error)
-    }
+    } catch (error) { console.error(error) }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      addItem();
-    }
+    if (e.key === "Enter") addItem()
   }
 
-  const sortItemsAlphabetically = (items: ShoppingListTypes[]) => {
-    return items.sort((a, b) => a.name.localeCompare(b.name))
-  }
+  const sortItemsAlphabetically = (list: ShoppingListTypes[]) =>
+    list.sort((a, b) => a.name.localeCompare(b.name))
 
-  const sortedItems = sortItemsAlphabetically(items) // Ordena a lista alfabeticamente
-
-  // Corrigindo a busca para considerar itens pendentes e concluídos
+  const sortedItems = sortItemsAlphabetically(items)
   const filteredItems = sortedItems.filter(item =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  // Itens pendentes filtrados e paginados
   const pendingItems = filteredItems.filter(item => !item.done)
+  const completedItems = filteredItems.filter(item => item.done)
   const indexOfLastPendingItem = currentPage * itemsPerPage
   const indexOfFirstPendingItem = indexOfLastPendingItem - itemsPerPage
   const currentPendingItems = pendingItems.slice(indexOfFirstPendingItem, indexOfLastPendingItem)
 
-  // Itens concluídos (não paginados)
-  const completedItems = filteredItems.filter(item => item.done)
-
-  // Corrigindo a paginação para atualizar quando itens são marcados como concluídos
   useEffect(() => {
-    // Se a página atual ficar vazia após marcar itens como concluídos, volta uma página
-    if (currentPendingItems.length === 0 && currentPage > 1) {
-      setCurrentPage(currentPage - 1)
-    }
+    if (currentPendingItems.length === 0 && currentPage > 1) setCurrentPage(currentPage - 1)
   }, [pendingItems, currentPage, currentPendingItems.length])
-
 
   const total = filteredItems.reduce((acc, item) => acc + item.price * item.quantity, 0)
 
   const handleDownloadPDF = () => {
     const doc = new jsPDF()
     doc.setFont("helvetica", "bold")
-
-    // Título do relatório
     doc.text("Relatório de Compras", 10, 10)
 
     if (supermarketName) {
-        doc.setFontSize(12)
-        doc.text(`Supermercado: ${supermarketName}`, 10, 20)
+      doc.setFontSize(12)
+      doc.text(`Supermercado: ${supermarketName}`, 10, 20)
     }
 
-    const tableData = filteredItems.map((item) => [
+    const tableData = filteredItems.map(item => [
       item.name || "-",
       item.quantity || 0,
       `R$ ${(item.price ?? 0).toFixed(2)}`,
-      item.priceHistory
-        ?.map((entry) =>
-          entry.price !== undefined
-            ? `R$ ${entry.price.toFixed(2)} (${entry.date})`
-            : `- (${entry.date || "Data indisponível"})`
-        )
-        .join("\n") || "-", // Quebra de linha no histórico de preços
+      item.priceHistory?.map(entry =>
+        entry.price !== undefined
+          ? `R$ ${entry.price.toFixed(2)} (${entry.date})`
+          : `- (${entry.date || "Data indisponível"})`
+      ).join("\n") || "-"
     ])
 
     let finalY = 30
 
     autoTable(doc, {
-        head: [["Produto", "Quantidade", "Preço", "Histórico de Preços"]],
-        body: tableData,
-        startY: supermarketName ? 30 : 20,
-        styles: { halign: "center", valign: "middle" },
-        didDrawCell: (data) => {
-            finalY = data.table.finalY ?? finalY
-        },
+      head: [["Produto", "Quantidade", "Preço", "Histórico de Preços"]],
+      body: tableData,
+      startY: supermarketName ? 30 : 20,
+      styles: { halign: "center", valign: "middle" },
+      didDrawCell: (data) => { finalY = data.table.finalY ?? finalY },
     })
 
-    // Adiciona o total abaixo da tabela com uma distância ajustada
     doc.setFont("helvetica", "bold")
     doc.setFontSize(14)
-    const totalY = finalY + 250  // Distância entre a tabela e o total
-    doc.text(`Total Geral: R$ ${total.toFixed(2)}`, 10, totalY)
-
+    doc.text(`Total Geral: R$ ${total.toFixed(2)}`, 10, finalY + 10)
     doc.save("relatorio_compras.pdf")
-  } 
+  }
 
-  // Funções de navegação
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber)
-  const nextPage = () => setCurrentPage((prev) => Math.min(prev + 1, Math.ceil(filteredItems.length / itemsPerPage)))
-  const prevPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1))
+  const nextPage = () => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(filteredItems.length / itemsPerPage)))
+  const prevPage = () => setCurrentPage(prev => Math.max(prev - 1, 1))
 
   const handleEditItem = (index: number) => {
-    setEditingIndex(index)
     const item = items[index]
-    setNewItemName(item.name)
-    setNewItemQuantity(item.quantity)
-    setNewItemPrice(item.price)
-
-    // Aguardar pequeno tempo antes de exibir o toast
-    setTimeout(() => {
-      toast.info("Editando item...", {
-        autoClose: 3000,
-        closeOnClick: true,
-        closeButton: false,
-      })
-    }, 10)
-  }
-  
-  const handleSaveEdit = () => {
-    if (editingIndex !== null) {
-      const updatedItems = [...items]
-      updatedItems[editingIndex] = {
-        ...updatedItems[editingIndex],
-        name: newItemName,
-        quantity: newItemQuantity,
-        price: newItemPrice
-      }
-      setItems(updatedItems)
-      setEditingIndex(null)
-      setNewItemName("")
-      setNewItemQuantity(0)
-      setNewItemPrice(0)
-      setTimeout(() => {
-        toast.success("Item atualizado com sucesso!", {
-          autoClose: 3000,
-          closeOnClick: true,
-          closeButton: false,
-        })
-      }, 10)
+    if (item) {
+      setEditingIndex(index)
+      setEditingItemName(item.name)
+      setEditModalOpen(true)
     }
+  }
+
+  const handleSaveEdit = () => {
+    if (editingIndex === null) return
+    const updatedItems = [...items]
+    updatedItems[editingIndex] = {
+      ...updatedItems[editingIndex],
+      name: newItemName,
+      quantity: newItemQuantity,
+      price: newItemPrice,
+    }
+    setItems(updatedItems)
+    setEditingIndex(null)
+    setNewItemName("")
+    setNewItemQuantity(0)
+    setNewItemPrice(0)
+    setTimeout(() => toast.success("Item atualizado com sucesso!", { autoClose: 3000 }), 10)
+  }
+
+  const handleSaveEditModal = (newName: string) => {
+    if (editingIndex === null) return
+    const updatedItems = [...items]
+    updatedItems[editingIndex] = {
+      ...updatedItems[editingIndex],
+      name: newName
+    }
+    setItems(updatedItems)
+    setEditingIndex(null)
+    setEditingItemName("")
+    toast.success("Item atualizado com sucesso!", { autoClose: 3000 })
   }
 
   const handleCancelEdit = () => {
@@ -392,42 +328,50 @@ export const ShoppingList = () => {
     setNewItemPrice(0)
   }
 
+  // ===================== Render =====================
   return (
     <ThemeProvider>
-      <Global
-        styles={css`
-          body {
-            background-color: var(--background-color);
-            color: var(--text-color);
-          }
-        `}
-      />
-        <Container>
-        <Header>
-          <Title>Lista de Compras</Title>
-        </Header>
+      <Global styles={css`body { background-color: var(--background-color); color: var(--text-color); }`} />
+      <Container>
+        <Header><Title>Lista de Compras</Title></Header>
 
         {!userId ? (
           <LoginRegister setUserId={setUserId} />
         ) : (
           <>
-            <InnerHeader>
-              <ExitButton onClick={handleLogout}>Sair</ExitButton>
-            </InnerHeader>
-            <ReportButton>
-              <button onClick={handleDownloadPDF}>Baixar Relatório em PDF</button>
-            </ReportButton>
+            <InnerHeader><ExitButton onClick={handleLogout}>Sair</ExitButton></InnerHeader>
+
+            {/* Botão para abrir modal de supermercado */}
+            <AddSupermarket onClick={() => setSupermarketModalOpen(true)}>Informar Supermercado</AddSupermarket>
+
+            {/* Modal de supermercado */}
+            <SupermarketModal
+              isOpen={isSupermarketModalOpen}
+              onClose={() => setSupermarketModalOpen(false)}
+            >
+              <SupermarketForm
+                isOptional={isSupermarketOptional}
+                supermarketName={supermarketName}
+                onOptionChange={setIsSupermarketOptional}
+                onSupermarketChange={setSupermarketName}
+              />
+            </SupermarketModal>
+
+            {/* Modal de histórico de preços */}
             <PriceHistoryModal
               isOpen={modalIsOpen}
               onClose={handleCloseModal}
               history={currentHistory}
             />
-            <SupermarketForm
-              isOptional={isSupermarketOptional}
-              supermarketName={supermarketName}
-              onSupermarketChange={setSupermarketName}
-              onOptionChange={setIsSupermarketOptional}
+
+            <EditingItemModal
+              isOpen={editModalOpen}
+              onClose={() => setEditModalOpen(false)}
+              itemName={editingItemName}
+              onSave={handleSaveEditModal}
             />
+
+            {/* Formulário de adicionar item */}
             <ItemInputForm
               itemName={newItemName}
               onItemNameChange={setNewItemName}
@@ -438,69 +382,59 @@ export const ShoppingList = () => {
               onCancelEdit={handleCancelEdit}
               onKeyDown={handleKeyDown}
             />
-            <SearchContainer onSubmit={(e) => e.preventDefault()}>
+
+            {/* Busca */}
+            <SearchContainer onSubmit={e => e.preventDefault()}>
               <input
                 type="text"
                 placeholder="Buscar produto"
                 value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value)
-                  setCurrentPage(1) // Resetar a página ao buscar
-                }}
+                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1) }}
               />
               <button type="button">Buscar</button>
             </SearchContainer>
           </>
         )}
-      {/* Lista principal (itens pendentes) - usando currentPendingItems */}
-      <ShoppingListSection
+
+        {userId && <TotalPrice>Total: R$ {total.toFixed(2)}</TotalPrice>}
+
+        {/* Lista de itens pendentes */}
+        <ShoppingListSection
           title="Itens Pendentes"
           items={currentPendingItems}
           onToggleDone={(index) => {
             const item = currentPendingItems[index]
             const originalIndex = items.findIndex(i => i.name === item.name)
-            if (originalIndex !== -1) {
-              toggleDone(originalIndex)
-            }
+            if (originalIndex !== -1) toggleDone(originalIndex)
           }}
           onUpdateQuantity={(index, quantity) => {
             const item = currentPendingItems[index]
             const originalIndex = items.findIndex(i => i.name === item.name)
-            if (originalIndex !== -1) {
-              updateQuantity(originalIndex, quantity)
-            }
+            if (originalIndex !== -1) updateQuantity(originalIndex, quantity)
           }}
           onUpdatePrice={(index, price) => {
             const item = currentPendingItems[index]
             const originalIndex = items.findIndex(i => i.name === item.name)
-            if (originalIndex !== -1) {
-              updatePrice(originalIndex, price)
-            }
+            if (originalIndex !== -1) updatePrice(originalIndex, price)
           }}
           onRemoveItem={(index) => {
             const item = currentPendingItems[index]
             const originalIndex = items.findIndex(i => i.name === item.name)
-            if (originalIndex !== -1) {
-              removeItem(originalIndex)
-            }
+            if (originalIndex !== -1) removeItem(originalIndex)
+          }}
+          onEditItem={(index) => {
+            const item = currentPendingItems[index]
+            const originalIndex = items.findIndex(i => i.name === item.name)
+            if (originalIndex !== -1) handleEditItem(originalIndex)
           }}
           onShowHistory={(index) => {
             const item = currentPendingItems[index]
             const originalIndex = items.findIndex(i => i.name === item.name)
-            if (originalIndex !== -1) {
-              handleShowHistory(originalIndex)
-            }
-          }}
-          onEditItem={(index) => {
-            const item = currentPendingItems[index];
-            const originalIndex = items.findIndex(i => i.name === item.name);
-            if (originalIndex !== -1) {
-              handleEditItem(originalIndex);
-            }
+            if (originalIndex !== -1) handleShowHistory(originalIndex)
           }}
         />
 
-        {/* Controles de paginação - agora baseado em pendingItems */}
+        {/* Paginação */}
         {pendingItems.length > itemsPerPage && (
           <Pagination
             currentPage={currentPage}
@@ -512,57 +446,55 @@ export const ShoppingList = () => {
           />
         )}
 
-        {/* Lista de itens concluídos - usando completedItems */}
+        {/* Lista de itens concluídos */}
         <ShoppingListSection
           title="Itens Concluídos"
           items={completedItems}
           onToggleDone={(index) => {
             const item = completedItems[index]
             const originalIndex = items.findIndex(i => i.name === item.name)
-            if (originalIndex !== -1) {
-              toggleDone(originalIndex)
-            }
+            if (originalIndex !== -1) toggleDone(originalIndex)
           }}
           onUpdateQuantity={(index, quantity) => {
             const item = completedItems[index]
             const originalIndex = items.findIndex(i => i.name === item.name)
-            if (originalIndex !== -1) {
-              updateQuantity(originalIndex, quantity)
-            }
+            if (originalIndex !== -1) updateQuantity(originalIndex, quantity)
           }}
           onUpdatePrice={(index, price) => {
             const item = completedItems[index]
             const originalIndex = items.findIndex(i => i.name === item.name)
-            if (originalIndex !== -1) {
-              updatePrice(originalIndex, price)
-            }
+            if (originalIndex !== -1) updatePrice(originalIndex, price)
           }}
           onRemoveItem={(index) => {
             const item = completedItems[index]
             const originalIndex = items.findIndex(i => i.name === item.name)
-            if (originalIndex !== -1) {
-              removeItem(originalIndex)
-            }
+            if (originalIndex !== -1) removeItem(originalIndex)
+          }}
+          onEditItem={(index) => {
+            const item = completedItems[index]
+            const originalIndex = items.findIndex(i => i.name === item.name)
+            if (originalIndex !== -1) handleEditItem(originalIndex)
           }}
           onShowHistory={(index) => {
             const item = completedItems[index]
             const originalIndex = items.findIndex(i => i.name === item.name)
-            if (originalIndex !== -1) {
-              handleShowHistory(originalIndex)
-            }
+            if (originalIndex !== -1) handleShowHistory(originalIndex)
           }}
-          onEditItem={(index) => {
-            const item = currentPendingItems[index];
-            const originalIndex = items.findIndex(i => i.name === item.name);
-            if (originalIndex !== -1) {
-              handleEditItem(originalIndex);
-            }
-          }}
-          isCompletedList={true}
-        />      
-        {userId && <TotalPrice>Total: R$ {total.toFixed(2)}</TotalPrice>}
+          isCompletedList
+        />
+
+        {/* Botão de relatório PDF */}
+        <ReportTotalDiv>
+          {userId && 
+            <ReportButton>
+              <button onClick={handleDownloadPDF}>Baixar Relatório em PDF</button>
+            </ReportButton>
+          }
+          {userId && <TotalPrice>Total: R$ {total.toFixed(2)}</TotalPrice>}
+        </ReportTotalDiv>
+
         <ToastContainer />
       </Container>
-    </ThemeProvider>    
+    </ThemeProvider>
   )
 }
