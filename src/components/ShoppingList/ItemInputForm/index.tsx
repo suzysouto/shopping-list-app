@@ -6,9 +6,6 @@ export const ItemInputForm = ({
   onItemNameChange,
   onAddItem,
   onSaveList,
-  isEditing,
-  onSaveEdit,
-  onCancelEdit,
   onKeyDown
 }: ItemInputFormPropsTypes) => {
   return (
@@ -21,20 +18,9 @@ export const ItemInputForm = ({
         onKeyDown={onKeyDown}
       />
       <ButtonGroup>
-        {isEditing ? (
-          <>
-            <FormButton type="button" onClick={onSaveEdit}>
-              Salvar Edição
-            </FormButton>
-            <FormButton type="button" onClick={onCancelEdit}>
-              Cancelar
-            </FormButton>
-          </>
-        ) : (
-          <FormButton type="button" onClick={onAddItem}>
-            Adicionar
-          </FormButton>
-        )}
+        <FormButton type="button" onClick={onAddItem}>
+          Adicionar
+        </FormButton>
         <FormButton type="button" onClick={onSaveList}>
           Salvar Lista
         </FormButton>

@@ -26,7 +26,6 @@ export const ItemList = styled.ul`
 
 export const TotalPrice = styled.h2`
   font-size: 1.25rem;
-  margin-top: 1.5rem;
   text-align: right;
 `
 
@@ -194,4 +193,26 @@ export const CompletedSection = styled.div`
 
 export const SectionWrapper = styled.div`
   margin-top: 20px;
+`
+
+export const ReportTotalDiv = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2rem 0 1rem;
+`
+
+export const AddSupermarket = styled.button`
+  padding: 0.5rem 1rem;
+  background-color: #0070f3;
+  color: white;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s ease;
+
+  &:hover {
+    background-color: #005bb5;
+  }
 `
