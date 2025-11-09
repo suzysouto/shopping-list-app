@@ -203,15 +203,47 @@ export const ReportTotalDiv = styled.div`
 `
 
 export const AddSupermarket = styled.button`
-  padding: 0.5rem 1rem;
-  background-color: #0070f3;
-  color: white;
+  background-color: transparent;
+  color: #fff;
   border: none;
   border-radius: 0.25rem;
   cursor: pointer;
   font-size: 1rem;
   transition: background-color 0.3s ease;
+  text-decoration: underline;
 
+`
+
+export const SupermarketDiv = styled.div`
+  display: flex;
+
+  div {
+    display: flex;
+    align-items: center;
+    width: 100%
+  }
+`
+
+export const SupermarketLabel = styled.p`
+  font-size: 0.875rem;
+  font-weight: 400;
+`
+
+export const SupermarketName = styled.span`
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0 0.5rem;
+`
+
+export const ChangeSupermarket = styled.button`
+  background-color: #007BFF;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: background-color 0.3s ease;
+  padding: 0.15rem 0.3rem;
+  
   &:hover {
     background-color: #005bb5;
   }
