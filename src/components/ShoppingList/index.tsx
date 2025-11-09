@@ -20,6 +20,10 @@ import {
   SectionTitle,
   ReportTotalDiv,
   AddSupermarket,
+  SupermarketDiv,
+  SupermarketName,
+  ChangeSupermarket,
+  SupermarketLabel,
 } from './styles'
 import { auth } from '../../firebaseConfig'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
@@ -318,7 +322,7 @@ export const ShoppingList = () => {
     setItems(updatedItems)
     setEditingIndex(null)
     setEditingItemName("")
-    toast.success("Item atualizado com sucesso!", { autoClose: 3000 })
+    setTimeout(() => toast.success("Item atualizado com sucesso!", { autoClose: 3000 }), 10)
   }
 
   const handleCancelEdit = () => {
@@ -342,9 +346,23 @@ export const ShoppingList = () => {
             <InnerHeader><ExitButton onClick={handleLogout}>Sair</ExitButton></InnerHeader>
 
             {/* Botão para abrir modal de supermercado */}
-            <AddSupermarket onClick={() => setSupermarketModalOpen(true)}>Informar Supermercado</AddSupermarket>
-
-            {/* Modal de supermercado */}
+            <SupermarketDiv>
+              {supermarketName ? (
+                <div>
+                  <SupermarketLabel>Supermercado:</SupermarketLabel>
+                  <SupermarketName>{supermarketName}</SupermarketName>
+                  <ChangeSupermarket
+                    onClick={() => setSupermarketModalOpen(true)}
+                  >
+                    Alterar
+                  </ChangeSupermarket>
+                </div>
+              ) : (
+                <AddSupermarket onClick={() => setSupermarketModalOpen(true)}>
+                  Informar Supermercado (opcional)
+                </AddSupermarket>
+              )}
+            </SupermarketDiv>
             <SupermarketModal
               isOpen={isSupermarketModalOpen}
               onClose={() => setSupermarketModalOpen(false)}
@@ -354,6 +372,32 @@ export const ShoppingList = () => {
                 supermarketName={supermarketName}
                 onOptionChange={setIsSupermarketOptional}
                 onSupermarketChange={setSupermarketName}
+                onSave={async () => {
+                  if (!isSupermarketOptional || !supermarketName.trim() || !userId) {
+                    setSupermarketModalOpen(false)
+                    return
+                  }
+
+                  try {
+                    await saveList(userId, items, supermarketName)
+                    setSupermarketModalOpen(false)
+                    setTimeout(() => 
+                      toast.success(`Supermercado "${supermarketName}" salvo com sucesso!`, { 
+                        autoClose: 3000 
+                      }), 10
+                    )
+                  } catch (error) {
+                    console.error("Erro ao salvar supermercado:", error)
+                    setTimeout(() => 
+                      toast.error("Erro ao salvar no Firebase. Tente novamente.", { 
+                        autoClose: 3000 
+                      }), 10
+                    )
+                  }
+                }}
+                onCancel={() => {
+                  setSupermarketModalOpen(false)
+                }}
               />
             </SupermarketModal>
 
