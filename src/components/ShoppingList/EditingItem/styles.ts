@@ -23,20 +23,6 @@ export const ModalOverlay = styled.div`
   z-index: 1000;
 `
 
-export const CloseButton = styled.button`
-  margin-top: 0.9375rem;
-  padding: 0.5rem 1rem;
-  background-color: var(--delete-color-hover);
-  color: white;
-  border: none;
-  border-radius: 0.25rem;
-  cursor: pointer;
-
-  :hover {
-    background-color: var(--delete-color);
-  }
-`
-
 export const HistoryTitle = styled.h2`
   font-size: 1.2rem;
   color: var(--primary-color);
@@ -53,6 +39,51 @@ export const Item = styled.li`
   margin: 0.2rem 0;
 `
 
-export const SaveButton = styled.button``
+export const Buttons = styled.div`
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2rem;
+`
 
-export const InputField = styled.input``
+export const SaveButton = styled.button`
+  padding: 0.5rem 1rem;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 0.3rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover:not(:disabled) {
+    background-color: #218838;
+  }
+
+  &:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+`
+
+export const CloseButton = styled.button`
+  padding: 0.5rem 1rem;
+  background-color: var(--delete-color-hover);
+  color: white;
+  border: none;
+  border-radius: 0.3rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  :hover {
+    background-color: var(--delete-color);
+  }
+`
+
+export const InputField = styled.input`
+  border: 0.5px solid #ccc;
+  border-radius: 0.3rem;
+  font-size: 1rem;
+  padding: 0.3rem 0.5rem;
+`

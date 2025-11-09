@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { EditingItemModalPropsTypes } from './types'
-import { ModalOverlay, ModalContent, CloseButton, HistoryTitle, SaveButton, InputField } from './styles'
+import { ModalOverlay, ModalContent, CloseButton, HistoryTitle, SaveButton, InputField, Buttons } from './styles'
 
 export const EditingItemModal = ({
   isOpen,
@@ -33,10 +33,10 @@ export const EditingItemModal = ({
           onChange={(e) => setName(e.target.value)} 
           placeholder="Nome do item"
         />
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: "1rem" }}>
+        <Buttons>
           <CloseButton onClick={onClose}>Fechar</CloseButton>
           <SaveButton onClick={handleSave}>Salvar</SaveButton>
-        </div>
+        </Buttons>
       </ModalContent>
     </ModalOverlay>
   )

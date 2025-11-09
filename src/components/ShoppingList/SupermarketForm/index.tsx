@@ -1,24 +1,35 @@
+// SupermarketForm.tsx
 import { SupermarketFormPropsTypes } from './types'
 import {
   RadioButtonContainer,
   RadioButtonLabel,
   SupermarketField,
   SupermarketLabel,
-  SupermarketInput
+  SupermarketInput,
+  ButtonGroup,
+  SaveButton,
+  CancelButton
 } from './styles'
+
+interface SupermarketFormProps extends SupermarketFormPropsTypes {
+  onSave: () => void
+  onCancel: () => void
+}
 
 export const SupermarketForm = ({
   isOptional,
   supermarketName,
   onSupermarketChange,
-  onOptionChange
-}: SupermarketFormPropsTypes) => {
+  onOptionChange,
+  onSave,
+  onCancel
+}: SupermarketFormProps) => {
   return (
     <>
       <div>Deseja informar o supermercado?</div>
       <RadioButtonContainer>
         <RadioButtonLabel>
-          <input 
+          <input
             type='radio'
             name='supermarketOption'
             value='yes'
@@ -28,7 +39,7 @@ export const SupermarketForm = ({
           Sim
         </RadioButtonLabel>
         <RadioButtonLabel>
-          <input 
+          <input
             type='radio'
             name='supermarketOption'
             value='no'
@@ -38,6 +49,7 @@ export const SupermarketForm = ({
           Não
         </RadioButtonLabel>
       </RadioButtonContainer>
+
       {isOptional && (
         <SupermarketField>
           <SupermarketLabel>
@@ -51,6 +63,16 @@ export const SupermarketForm = ({
           />
         </SupermarketField>
       )}
+
+      <ButtonGroup>
+        <CancelButton onClick={onCancel}>Cancelar</CancelButton>
+        <SaveButton
+          onClick={onSave}
+          disabled={!isOptional || !supermarketName.trim()}
+        >
+          Salvar
+        </SaveButton>
+      </ButtonGroup>
     </>
   )
 }
