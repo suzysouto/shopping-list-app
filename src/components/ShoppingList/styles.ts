@@ -27,6 +27,10 @@ export const ItemList = styled.ul`
 export const TotalPrice = styled.h2`
   font-size: 1.25rem;
   text-align: right;
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
+  }
 `
 
 export const ExitButton = styled.button`
@@ -89,6 +93,13 @@ export const SearchContainer = styled.div`
 
     &:hover {
       background-color: #005bb5;
+    }
+  }
+
+  @media (max-width: 768px) {
+    input {
+      width: 68%;
+      font-size: 0.875rem;
     }
   }
 `
@@ -170,6 +181,13 @@ export const ReportButton = styled.div`
 
     &:hover {
       background-color: var(--secondary-color);
+    }
+  }
+
+  @media (max-width: 768px) {
+    button {
+      padding: 0.5rem;
+      font-size: 0.8125rem;
     }
   }
 `

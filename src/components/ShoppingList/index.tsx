@@ -431,7 +431,7 @@ export const ShoppingList = () => {
             <SearchContainer onSubmit={e => e.preventDefault()}>
               <input
                 type="text"
-                placeholder="Buscar produto"
+                placeholder="Buscar na lista abaixo"
                 value={searchTerm}
                 onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1) }}
               />
@@ -440,7 +440,9 @@ export const ShoppingList = () => {
           </>
         )}
 
-        {userId && <TotalPrice>Total: R$ {total.toFixed(2)}</TotalPrice>}
+        {userId && filteredItems.length >= 3 && (
+          <TotalPrice>Total: R$ {total.toFixed(2)}</TotalPrice>
+        )}
 
         {/* Lista de itens pendentes */}
         <ShoppingListSection
@@ -531,7 +533,7 @@ export const ShoppingList = () => {
         <ReportTotalDiv>
           {userId && 
             <ReportButton>
-              <button onClick={handleDownloadPDF}>Baixar Relatório em PDF</button>
+              <button onClick={handleDownloadPDF}>Baixar Relatório (PDF)</button>
             </ReportButton>
           }
           {userId && <TotalPrice>Total: R$ {total.toFixed(2)}</TotalPrice>}
