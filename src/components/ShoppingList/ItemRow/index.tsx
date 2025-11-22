@@ -68,17 +68,6 @@ export const ItemRow = ({
             }}
             onBlur={() => onUpdatePrice(index, item.price)}
           />
-          {/* <PriceInput
-            type="number"
-            placeholder="Preço"
-            step="0.01"
-            value={item.price > 0 ? item.price : ""}
-            onChange={(e) => {
-              const inputValue = e.target.valueAsNumber || 0
-              onUpdatePrice(index, inputValue)
-            }}
-            onBlur={() => onUpdatePrice(index, item.price)}
-          /> */}
           <ItemButtons
             onEdit={() => onEdit(index)}
             onShowHistory={() => onShowHistory(index)}
