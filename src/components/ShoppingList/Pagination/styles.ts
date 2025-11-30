@@ -7,7 +7,7 @@ export const PaginationWrapper = styled.div`
   justify-content: center;
   align-items: center;
   margin-top: 2rem;
-  gap: 0.5rem; /* Espaçamento entre os botões */
+  gap: 0.5rem;
 `
 
 export const ButtonNumbers = styled.button<{ isActive?: boolean }>`

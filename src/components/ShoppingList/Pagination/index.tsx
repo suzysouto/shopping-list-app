@@ -27,7 +27,7 @@ export const Pagination = ({
           key={i + 1}
           onClick={() => onPageChange(i + 1)}
           style={{
-            backgroundColor: currentPage === i + 1 ? 'var(--foreground)' : 'var(--background-color)',
+            backgroundColor: currentPage === i + 1 ? 'var(--history-color)' : 'var(--background-color)',
             color: currentPage === i + 1 ? 'var(--background-color)' : 'var(--text-color)',
           }}
         >
