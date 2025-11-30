@@ -79,6 +79,7 @@ export const SearchContainer = styled.div`
     font-size: 1rem;
     border: 1px solid #ccc;
     border-radius: 0.25rem;
+    background-color: var(--background-color2);
   }
 
   button {

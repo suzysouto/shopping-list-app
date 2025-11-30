@@ -3,7 +3,7 @@ import styled from '@emotion/styled'
 const small = '600px'
 
 export const ItemContainer = styled.div`
-  background-color: #333;
+  background-color: var(--background-color2);
   border: 1px solid #ccc;
   border-radius: 0.5rem;
   padding: 0.75rem;
@@ -39,6 +39,7 @@ export const Checkbox = styled.input`
   height: 1rem;
   cursor: pointer;
   accent-color: #4caf50;
+  background-color: var(--background-color2);
 `
 
 export const DoneItem = styled.span`
@@ -47,7 +48,7 @@ export const DoneItem = styled.span`
 `
 
 export const PendingItem = styled.span`
-  color: #ffffff;
+  color: var(--text-color);
 `
 
 export const SpecItemsWrapper = styled.div`
@@ -63,8 +64,8 @@ export const PriceInput = styled.input`
   text-align: right;
   border: 1px solid #ccc;
   border-radius: 0.25rem;
-  background-color: #2c2c2c;
-  color: #ffffff;
+  background-color: var(--background-color2);
+  color: var(--text-color);
 
   @media (max-width: 600px) {
     width: 100%;
@@ -79,8 +80,8 @@ export const QuantityInput = styled.input`
   text-align: center;
   border: 1px solid #ccc;
   border-radius: 0.25rem;
-  background-color: #2c2c2c;
-  color: #ffffff;
+  background-color: var(--background-color2);
+  color: var(--text-color);
 
   @media (max-width: 600px) {
     width: 100%;
