@@ -7,6 +7,7 @@ const lightTheme = {
   "button-background-color": "#4caf50",
   "button-text-color": "#ffffff",
   "button-hover-background-color": "#45a049",
+  "background-color2": "#FFF",
 }
 
 const darkTheme = {
@@ -15,6 +16,7 @@ const darkTheme = {
   "button-background-color": "#4caf50",
   "button-text-color": "#ffffff",
   "button-hover-background-color": "#3e8e41",
+  "background-color2": "#333",
 }
 
 // Criação do contexto
