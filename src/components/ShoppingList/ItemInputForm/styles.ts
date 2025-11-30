@@ -17,6 +17,7 @@ export const FormInput = styled.input`
   padding: 0.625rem;
   border-radius: 0.25rem;
   border: 1px solid #ccc;
+  background-color: var(--background-color2);
   font-size: 1rem;
   width: 68.5%;
 
